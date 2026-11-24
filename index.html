@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Kas Kelas — Transparan, Rapi &amp; Anti Ribet</title>
+  <meta name="description" content="Aplikasi kas kelas modern: pantau saldo, tunggakan, bayar via QR WhatsApp, dan kelola pembukuan bendahara." />
+  <meta name="theme-color" content="#FAF7F0" />
+  <script>document.documentElement.classList.add('js');</script>
+
+  <!-- Google Fonts: Bricolage Grotesque (judul unik & proporsional) + Plus Jakarta Sans (isi & angka) -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body data-panel="siswa">
+
+  <!-- ================= DEKORASI LATAR ================= -->
+  <div class="bg-decor" aria-hidden="true">
+    <span class="blob blob-1"></span>
+    <span class="blob blob-2"></span>
+    <span class="blob blob-3"></span>
+    <span class="blob blob-4"></span>
+    <div class="bg-grid"></div>
+  </div>
+
+  <!-- ================= NAVBAR MELAYANG ================= -->
+  <header class="navbar glass" id="navbar">
+    <a href="#top" class="brand" data-scroll aria-label="Kas Kelas - kembali ke atas">
+      <span class="brand-logo"><i data-lucide="wallet"></i></span>
+      <span class="brand-text">Kas<span>Kelas</span></span>
+    </a>
+
+    <nav class="nav-links" id="navSiswa" aria-label="Navigasi panel siswa">
+      <a href="#ringkasan" data-scroll>Ringkasan</a>
+      <a href="#tunggakan" data-scroll>Tunggakan</a>
+      <a href="#bayar" data-scroll>Bayar</a>
+      <a href="#rajin" data-scroll>Paling Rajin</a>
+      <a href="#pengeluaran" data-scroll>Pengeluaran</a>
+    </nav>
+
+    <nav class="nav-links hidden" id="navAdmin" aria-label="Navigasi panel bendahara">
+      <a href="#admin-ringkasan" data-scroll>Ringkasan</a>
+      <a href="#tabel" data-scroll>Tabel Kas</a>
+      <a href="#kelola-siswa" data-scroll>Siswa</a>
+      <a href="#kelola-pengeluaran" data-scroll>Pengeluaran</a>
+      <a href="#pengaturan" data-scroll>Pengaturan</a>
+    </nav>
+
+    <div class="nav-actions">
+      <div class="switcher" id="switcher" role="tablist" aria-label="Pilih panel">
+        <span class="switch-indicator" id="switchIndicator"></span>
+        <button class="switch-btn active" type="button" data-panel="siswa" role="tab" aria-selected="true">
+          <i data-lucide="users"></i><span>Siswa</span>
+        </button>
+        <button class="switch-btn" type="button" data-panel="admin" role="tab" aria-selected="false">
+          <i data-lucide="shield-check"></i><span>Bendahara</span>
+        </button>
+      </div>
+      <button class="lock-btn glass-btn hidden" type="button" id="btnLock" title="Kunci Panel / Logout">
+        <i data-lucide="lock"></i><span>Kunci</span>
+      </button>
+    </div>
+  </header>
+
+  <main id="top">
+
+    <!-- ===================================================== -->
+    <!-- ================= PANEL SISWA (PUBLIK) ============== -->
+    <!-- ===================================================== -->
+    <div class="panel" id="panelSiswa">
+
+      <!-- RINGKASAN -->
+      <section class="section hero" id="ringkasan">
+        <div class="container">
+          <div class="hero-head">
+            <span class="eyebrow"><span class="live-dot"></span>Kas Kelas <b data-bind="className">XI RPL 1</b> · Real-time</span>
+            <h1 class="display split-title">Uang kas kelas, <span class="hl">transparan</span> &amp; tanpa drama.</h1>
+            <p class="lead" data-reveal>Pantau saldo, cek siapa yang belum bayar, lalu konfirmasi pembayaran lewat QR WhatsApp dalam hitungan detik. Iuran cuma <b>Rp 5.000 / minggu</b>.</p>
+            <div class="hero-cta" data-reveal>
+              <a href="#bayar" class="btn btn-primary glass-btn" data-scroll><i data-lucide="qr-code"></i>Bayar Kas Sekarang</a>
+              <a href="#pengeluaran" class="btn btn-ghost" data-scroll><i data-lucide="book-open"></i>Buku Pengeluaran</a>
+            </div>
+          </div>
+
+          <div class="stats-grid" data-stagger>
+            <article class="stat-card stat-main">
+              <div class="stat-label"><span class="stat-icon"><i data-lucide="piggy-bank"></i></span>Saldo Kas Terkini</div>
+              <div class="stat-value" id="statSaldo">Rp 0</div>
+              <div class="stat-foot" id="statUpdated">Memuat data…</div>
+              <span class="stat-deco"></span>
+            </article>
+            <article class="stat-card">
+              <div class="stat-label"><span class="stat-icon icon-sage"><i data-lucide="trending-up"></i></span>Total Pemasukan</div>
+              <div class="stat-value" id="statIncome">Rp 0</div>
+              <div class="stat-foot" id="statIncomeSub">-</div>
+            </article>
+            <article class="stat-card">
+              <div class="stat-label"><span class="stat-icon icon-peach"><i data-lucide="trending-down"></i></span>Total Pengeluaran</div>
+              <div class="stat-value" id="statExpense">Rp 0</div>
+              <div class="stat-foot" id="statExpenseSub">-</div>
+            </article>
+            <article class="stat-card">
+              <div class="stat-label"><span class="stat-icon icon-teal"><i data-lucide="badge-check"></i></span>Siswa Lunas</div>
+              <div class="stat-value" id="statLunas">0/0</div>
+              <div class="stat-foot" id="statLunasSub">-</div>
+            </article>
+          </div>
+
+          <div class="progress-grid" data-stagger>
+            <div class="progress-card">
+              <div class="progress-head">
+                <div>
+                  <span class="progress-title"><i data-lucide="target"></i>Target Kas Minggu Ini</span>
+                  <span class="progress-sub" id="weekTargetLabel">-</span>
+                </div>
+                <b class="progress-pct" id="weekTargetPct">0%</b>
+              </div>
+              <div class="progress-track"><div class="progress-fill" id="weekTargetBar"></div></div>
+              <p class="progress-caption" id="weekTargetCaption">-</p>
+            </div>
+            <div class="progress-card">
+              <div class="progress-head">
+                <div>
+                  <span class="progress-title"><i data-lucide="calendar-days"></i>Target Kas Bulan Ini</span>
+                  <span class="progress-sub" id="monthTargetLabel">-</span>
+                </div>
+                <b class="progress-pct" id="monthTargetPct">0%</b>
+              </div>
+              <div class="progress-track"><div class="progress-fill progress-fill-warm" id="monthTargetBar"></div></div>
+              <p class="progress-caption" id="monthTargetCaption">-</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TUNGGAKAN -->
+      <section class="section" id="tunggakan">
+        <div class="container">
+          <div class="section-head">
+            <span class="eyebrow"><i data-lucide="hourglass"></i>Daftar Tunggakan</span>
+            <h2 class="split-title">Siapa yang <span class="hl hl-peach">belum bayar</span> kas?</h2>
+            <p data-reveal>Bukan untuk mempermalukan, tapi supaya semua saling ingat. Total tunggakan dihitung otomatis: <b>Rp 5.000 × jumlah minggu</b> yang belum dibayar.</p>
+          </div>
+          <div class="toolbar" data-reveal>
+            <label class="search">
+              <i data-lucide="search"></i>
+              <input type="search" id="searchTunggakan" placeholder="Cari nama siswa…" autocomplete="off" />
+            </label>
+            <div class="chip-row" id="arrearsSummary"></div>
+          </div>
+          <div class="arrears-grid" id="arrearsList"></div>
+        </div>
+      </section>
+
+      <!-- BAYAR VIA QR -->
+      <section class="section" id="bayar">
+        <div class="container">
+          <div class="section-head">
+            <span class="eyebrow"><i data-lucide="scan-line"></i>Bayar via QR WhatsApp</span>
+            <h2 class="split-title">Pilih nama, centang minggu, <span class="hl">scan &amp; beres.</span></h2>
+            <p data-reveal>QR Code akan membuka chat WhatsApp bendahara lengkap dengan pesan konfirmasi otomatis berisi nama, minggu yang dibayar, dan total nominal.</p>
+          </div>
+
+          <div class="pay-layout">
+            <div class="card pay-form" data-reveal>
+              <div class="step">
+                <span class="step-num">1</span>
+                <div><h3>Pilih nama kamu</h3><p>Cari namamu di daftar kelas.</p></div>
+              </div>
+              <div class="select-wrap">
+                <select id="paySelect" class="input" aria-label="Pilih nama siswa"></select>
+              </div>
+
+              <div class="step">
+                <span class="step-num">2</span>
+                <div><h3>Centang minggu yang mau dibayar</h3><p id="payHint">Setiap minggu = Rp 5.000</p></div>
+              </div>
+              <div class="week-actions">
+                <button class="btn btn-sm btn-ghost" type="button" id="btnSelectAll"><i data-lucide="list-checks"></i>Pilih semua</button>
+                <button class="btn btn-sm btn-ghost" type="button" id="btnClearWeeks"><i data-lucide="rotate-ccw"></i>Kosongkan</button>
+              </div>
+              <div class="week-options" id="payWeeks"></div>
+
+              <div class="pay-summary">
+                <div>
+                  <span class="ps-label">Jumlah dibayar</span>
+                  <span class="ps-count" id="payCount">0 minggu</span>
+                  <span class="ps-formula" id="payFormula">0 × Rp 5.000</span>
+                </div>
+                <div class="ps-total">
+                  <span class="ps-label">Total</span>
+                  <b id="payTotal">Rp 0</b>
+                </div>
+              </div>
+            </div>
+
+            <aside class="card qr-card" data-reveal>
+              <div class="step">
+                <span class="step-num">3</span>
+                <div><h3>Scan &amp; kirim konfirmasi</h3><p>Pakai kamera HP atau aplikasi scanner.</p></div>
+              </div>
+              <div class="qr-frame">
+                <span class="qr-corner tl"></span><span class="qr-corner tr"></span>
+                <span class="qr-corner bl"></span><span class="qr-corner br"></span>
+                <div class="qr-box" id="qrBox"></div>
+              </div>
+              <p class="qr-caption" id="qrCaption">Pilih nama &amp; minggu untuk membuat QR.</p>
+              <div class="qr-actions">
+                <a class="btn btn-wa disabled" id="btnOpenWa" target="_blank" rel="noopener" aria-disabled="true"><i data-lucide="message-circle"></i>Buka di WhatsApp</a>
+                <button class="btn btn-ghost" type="button" id="btnCopyMsg" disabled><i data-lucide="copy"></i>Salin Pesan</button>
+              </div>
+              <details class="msg-details">
+                <summary><i data-lucide="message-square-text"></i>Lihat isi pesan</summary>
+                <pre class="msg-preview" id="msgPreview" data-lenis-prevent>Pesan konfirmasi akan muncul di sini…</pre>
+              </details>
+              <p class="wa-target">Dikirim ke WhatsApp bendahara: <b id="waTarget">-</b></p>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <!-- LEADERBOARD -->
+      <section class="section" id="rajin">
+        <div class="container">
+          <div class="section-head">
+            <span class="eyebrow"><i data-lucide="trophy"></i>Leaderboard</span>
+            <h2 class="split-title">Hall of fame <span class="hl">paling rajin</span> bayar kas.</h2>
+            <p data-reveal>Siswa yang kasnya selalu lunas. Makin sering bayar tepat waktu (maksimal 7 hari setelah tanggal minggu), makin tinggi peringkatnya.</p>
+          </div>
+          <div class="leader-layout">
+            <div class="card leader-card" data-reveal>
+              <ol class="leader-list" id="leaderList"></ol>
+            </div>
+            <div class="leader-side" id="leaderStats" data-reveal></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- BUKU PENGELUARAN -->
+      <section class="section" id="pengeluaran">
+        <div class="container">
+          <div class="section-head">
+            <span class="eyebrow"><i data-lucide="receipt"></i>Buku Pengeluaran</span>
+            <h2 class="split-title">Uangnya dipakai buat apa? <span class="hl">Semua tercatat.</span></h2>
+            <p data-reveal>Setiap rupiah yang keluar dari kas kelas dicatat bendahara di sini — lengkap dengan tanggal, keperluan, dan kategori.</p>
+          </div>
+          <div class="expense-layout">
+            <div class="card expense-summary" data-reveal>
+              <span class="ps-label">Total pengeluaran</span>
+              <b class="exp-total" id="expTotal">Rp 0</b>
+              <span class="exp-meta"><span id="expCount">0 transaksi</span> · <span id="expRatio">-</span></span>
+              <div class="exp-bar" id="expBar"></div>
+              <ul class="exp-legend" id="expLegend"></ul>
+            </div>
+            <div class="card expense-book" data-reveal>
+              <ul class="expense-list" id="expList"></ul>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- ============== PANEL BENDAHARA (ADMIN) ============== -->
+    <!-- ===================================================== -->
+    <div class="panel hidden" id="panelAdmin">
+
+      <!-- RINGKASAN ADMIN -->
+      <section class="section hero admin-hero" id="admin-ringkasan">
+        <div class="container">
+          <div class="admin-hero-head">
+            <div>
+              <span class="eyebrow eyebrow-teal"><i data-lucide="shield-check"></i>Mode Bendahara · Akses Terproteksi</span>
+              <h1 class="display display-sm split-title">Panel <span class="hl">Bendahara</span> kelas.</h1>
+              <p class="lead" data-reveal>Centang pembayaran, catat pengeluaran, tagih tunggakan, dan cadangkan data — semuanya otomatis tersinkron ke panel siswa.</p>
+            </div>
+            <div class="admin-quick" data-reveal>
+              <button class="btn btn-primary glass-btn" type="button" id="btnAddWeekHero"><i data-lucide="calendar-plus"></i>Tambah Minggu</button>
+              <button class="btn btn-ghost js-add-student" type="button"><i data-lucide="user-plus"></i>Tambah Siswa</button>
+            </div>
+          </div>
+          <div class="mini-stats" data-stagger>
+            <div class="mini-stat">
+              <span class="ms-icon icon-teal"><i data-lucide="piggy-bank"></i></span>
+              <div><span class="ms-label">Saldo Kas</span><b id="aSaldo">Rp 0</b><span class="ms-sub" id="aSaldoSub">-</span></div>
+            </div>
+            <div class="mini-stat">
+              <span class="ms-icon icon-sage"><i data-lucide="trending-up"></i></span>
+              <div><span class="ms-label">Pemasukan</span><b id="aIncome">Rp 0</b><span class="ms-sub" id="aIncomeSub">-</span></div>
+            </div>
+            <div class="mini-stat">
+              <span class="ms-icon icon-peach"><i data-lucide="trending-down"></i></span>
+              <div><span class="ms-label">Pengeluaran</span><b id="aExpense">Rp 0</b><span class="ms-sub" id="aExpenseSub">-</span></div>
+            </div>
+            <div class="mini-stat">
+              <span class="ms-icon icon-butter"><i data-lucide="hand-coins"></i></span>
+              <div><span class="ms-label">Total Tunggakan</span><b id="aDebt">Rp 0</b><span class="ms-sub" id="aDebtSub">-</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TABEL CENTANG -->
+      <section class="section" id="tabel">
+        <div class="container">
+          <div class="section-head">
+            <span class="eyebrow"><i data-lucide="table-2"></i>Tabel Centang Pembayaran</span>
+            <h2 class="split-title">Klik centang, <span class="hl">saldo langsung update.</span></h2>
+            <p data-reveal>Setiap centang = Rp 5.000 untuk minggu tersebut. Arahkan kursor ke judul kolom untuk mengedit, mencentang semua, atau menghapus kolom minggu.</p>
+          </div>
+          <div class="toolbar" data-reveal>
+            <label class="search">
+              <i data-lucide="search"></i>
+              <input type="search" id="tableSearch" placeholder="Cari siswa di tabel…" autocomplete="off" />
+            </label>
+            <div class="toolbar-actions">
+              <button class="btn btn-sm btn-primary glass-btn" type="button" id="btnAddWeek"><i data-lucide="calendar-plus"></i>Tambah Minggu</button>
+              <button class="btn btn-sm btn-ghost" type="button" id="btnCopyRekap"><i data-lucide="megaphone"></i>Salin Rekap Grup</button>
+              <button class="btn btn-sm btn-ghost" type="button" id="btnExportCsvTable"><i data-lucide="file-spreadsheet"></i>Export CSV</button>
+            </div>
+          </div>
+          <div class="table-wrap" id="tableWrap" data-reveal>
+            <table class="kas-table" id="kasTable">
+              <thead id="kasHead"></thead>
+              <tbody id="kasBody"></tbody>
+              <tfoot id="kasFoot"></tfoot>
+            </table>
+          </div>
+          <div class="table-legend">
+            <span><i class="lg lg-check"></i>Sudah bayar Rp 5.000</span>
+            <span><i class="lg lg-empty"></i>Belum bayar</span>
+            <span><i data-lucide="message-circle"></i>Tombol “Tagih” muncul untuk siswa yang menunggak</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- KELOLA SISWA -->
+      <section class="section" id="kelola-siswa">
+        <div class="container">
+          <div class="section-head">
+            <span class="eyebrow"><i data-lucide="users"></i>Data Siswa</span>
+            <h2 class="split-title">Kelola <span class="hl">daftar siswa</span> kelas.</h2>
+            <p data-reveal>Tambah, edit, atau hapus siswa. Isi nomor WhatsApp agar tombol tagih langsung membuka chat siswa yang bersangkutan.</p>
+          </div>
+          <div class="toolbar" data-reveal>
+            <label class="search">
+              <i data-lucide="search"></i>
+              <input type="search" id="studentSearch" placeholder="Cari siswa…" autocomplete="off" />
+            </label>
+            <div class="toolbar-actions">
+              <button class="btn btn-sm btn-primary glass-btn js-add-student" type="button"><i data-lucide="user-plus"></i>Tambah Siswa</button>
+            </div>
+          </div>
+          <div class="student-grid" id="studentGrid"></div>
+        </div>
+      </section>
+
+      <!-- KELOLA PENGELUARAN -->
+      <section class="section" id="kelola-pengeluaran">
+        <div class="container">
+          <div class="section-head">
+            <span class="eyebrow"><i data-lucide="receipt"></i>Pengeluaran Kas</span>
+            <h2 class="split-title">Catat <span class="hl hl-peach">pengeluaran</span> kas kelas.</h2>
+            <p data-reveal>Setiap pengeluaran otomatis mengurangi saldo dan langsung tampil di Buku Pengeluaran panel siswa.</p>
+          </div>
+          <div class="admin-expense-layout">
+            <form class="card form-card" id="expenseForm" data-reveal autocomplete="off" novalidate>
+              <h3 class="card-title"><i data-lucide="receipt"></i>Pengeluaran Baru</h3>
+              <div class="field">
+                <label for="expAmount">Nominal (Rp)</label>
+                <input class="input" type="number" id="expAmount" min="100" step="100" inputmode="numeric" placeholder="cth. 25000" required />
+              </div>
+              <div class="quick-amounts" id="quickAmounts">
+                <button type="button" data-amt="5000">5rb</button>
+                <button type="button" data-amt="10000">10rb</button>
+                <button type="button" data-amt="20000">20rb</button>
+                <button type="button" data-amt="50000">50rb</button>
+                <button type="button" data-amt="100000">100rb</button>
+              </div>
+              <div class="field">
+                <label for="expPurpose">Keperluan</label>
+                <input class="input" type="text" id="expPurpose" maxlength="80" placeholder="cth. Beli spidol &amp; penghapus" required />
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label for="expDate">Tanggal</label>
+                  <input class="input" type="date" id="expDate" required />
+                </div>
+                <div class="field">
+                  <label for="expCategory">Kategori</label>
+                  <div class="select-wrap"><select class="input" id="expCategory"></select></div>
+                </div>
+              </div>
+              <button class="btn btn-primary glass-btn btn-block" type="submit"><i data-lucide="plus"></i>Catat Pengeluaran</button>
+              <p class="form-note">Saldo kas saat ini: <b id="expFormBalance">Rp 0</b></p>
+            </form>
+            <div class="card" data-reveal>
+              <div class="card-head">
+                <h3 class="card-title"><i data-lucide="history"></i>Riwayat Pengeluaran</h3>
+                <span class="pill pill-peach" id="adminExpTotal">Rp 0</span>
+              </div>
+              <ul class="expense-list" id="adminExpList"></ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PENGATURAN -->
+      <section class="section" id="pengaturan">
+        <div class="container">
+          <div class="section-head">
+            <span class="eyebrow"><i data-lucide="settings"></i>Pengaturan</span>
+            <h2 class="split-title">Pengaturan, keamanan &amp; <span class="hl">backup data.</span></h2>
+            <p data-reveal>Data tersimpan di localStorage browser ini. Rutin lakukan export backup supaya data aman jika browser dibersihkan.</p>
+          </div>
+          <div class="settings-grid" data-stagger>
+            <form class="card form-card" id="classForm" autocomplete="off" novalidate>
+              <h3 class="card-title"><i data-lucide="school"></i>Info Kelas &amp; WhatsApp</h3>
+              <div class="field">
+                <label for="setClassName">Nama kelas</label>
+                <input class="input" id="setClassName" maxlength="40" required />
+              </div>
+              <div class="field">
+                <label for="setWa">Nomor WhatsApp bendahara</label>
+                <input class="input" id="setWa" inputmode="tel" placeholder="62812…" />
+                <small>Format 62xxxxxxxxxx. Kosongkan untuk memakai nomor default di <code>script.js</code>.</small>
+              </div>
+              <button class="btn btn-primary glass-btn btn-block" type="submit"><i data-lucide="save"></i>Simpan Info</button>
+            </form>
+
+            <form class="card form-card" id="passwordForm" autocomplete="off" novalidate>
+              <h3 class="card-title"><i data-lucide="key-round"></i>Ganti Password</h3>
+              <p class="form-note" id="pwStatus"></p>
+              <div class="field">
+                <label for="pwOld">Password lama</label>
+                <input class="input" type="password" id="pwOld" autocomplete="current-password" required />
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label for="pwNew">Password baru</label>
+                  <input class="input" type="password" id="pwNew" autocomplete="new-password" minlength="4" required />
+                </div>
+                <div class="field">
+                  <label for="pwConfirm">Ulangi</label>
+                  <input class="input" type="password" id="pwConfirm" autocomplete="new-password" required />
+                </div>
+              </div>
+              <button class="btn btn-primary glass-btn btn-block" type="submit"><i data-lucide="shield-check"></i>Perbarui Password</button>
+            </form>
+
+            <div class="card form-card">
+              <h3 class="card-title"><i data-lucide="database"></i>Backup &amp; Export</h3>
+              <p class="form-note" id="dataInfo"></p>
+              <div class="btn-stack">
+                <button class="btn btn-ghost" type="button" id="btnExportJson"><i data-lucide="download"></i>Export Backup (.json)</button>
+                <button class="btn btn-ghost" type="button" id="btnImportJson"><i data-lucide="upload"></i>Import Backup (.json)</button>
+                <button class="btn btn-ghost" type="button" id="btnExportCsv"><i data-lucide="file-spreadsheet"></i>Export Laporan (.csv / Excel)</button>
+                <input type="file" id="importFile" accept=".json,application/json" hidden />
+              </div>
+            </div>
+
+            <div class="card form-card danger-zone">
+              <h3 class="card-title"><i data-lucide="triangle-alert"></i>Zona Berbahaya</h3>
+              <p class="form-note">Tindakan di bawah tidak bisa dibatalkan. Export backup terlebih dahulu. Password &amp; nomor WA tidak ikut terhapus.</p>
+              <div class="btn-stack">
+                <button class="btn btn-soft-danger" type="button" id="btnResetDemo"><i data-lucide="rotate-ccw"></i>Muat Ulang Data Contoh</button>
+                <button class="btn btn-danger-solid" type="button" id="btnWipe"><i data-lucide="trash-2"></i>Hapus Semua Data</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="brand brand-footer">
+        <span class="brand-logo"><i data-lucide="wallet"></i></span>
+        <span class="brand-text">Kas<span>Kelas</span></span>
+      </div>
+      <p>© <span id="footerYear">2026</span> Kas Kelas <span data-bind="className">XE 3</span> · Data tersimpan aman di database.</p>
+    </div>
+  </footer>
+
+  <!-- ================= MODAL: LOGIN BENDAHARA ================= -->
+  <div class="modal" id="loginModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card" id="loginCard" data-lenis-prevent>
+      <button class="modal-close" type="button" data-close aria-label="Tutup"><i data-lucide="x"></i></button>
+      <div class="login-icon"><i data-lucide="lock-keyhole"></i></div>
+      <h3 class="modal-title" id="loginTitle">Panel Bendahara</h3>
+      <p class="modal-sub">Masukkan password / PIN khusus bendahara untuk membuka panel.</p>
+      <form id="loginForm" autocomplete="off">
+        <div class="pw-field">
+          <input class="input" type="password" id="loginInput" placeholder="••••••••" autocomplete="current-password" aria-label="Password bendahara" />
+          <button type="button" class="pw-toggle" id="loginToggle" aria-label="Tampilkan password"><i data-lucide="eye"></i></button>
+        </div>
+        <div class="login-meta">
+          <span class="login-error" id="loginError" role="alert"></span>
+          <span class="attempt-dots" id="loginAttempts" title="Sisa percobaan"></span>
+        </div>
+        <div class="cooldown hidden" id="loginCooldown">
+          <span id="loginCooldownText"></span>
+          <div class="cooldown-track"><div class="cooldown-bar" id="loginCooldownBar"></div></div>
+        </div>
+        <button class="btn btn-primary glass-btn btn-block" type="submit" id="loginSubmit"><i data-lucide="lock-open"></i>Buka Panel</button>
+      </form>
+      <p class="modal-foot"><i data-lucide="shield"></i>Dilindungi pembatasan percobaan &amp; kunci otomatis saat tidak aktif.</p>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: SISWA ================= -->
+  <div class="modal" id="studentModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="studentModalTitle">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card" data-lenis-prevent>
+      <button class="modal-close" type="button" data-close aria-label="Tutup"><i data-lucide="x"></i></button>
+      <h3 class="modal-title" id="studentModalTitle">Tambah Siswa</h3>
+      <p class="modal-sub">Nomor WhatsApp opsional, dipakai untuk tombol tagih 1-klik.</p>
+      <form id="studentForm" autocomplete="off" novalidate>
+        <input type="hidden" id="stuId" />
+        <div class="field">
+          <label for="stuName">Nama lengkap</label>
+          <input class="input" id="stuName" maxlength="50" placeholder="cth. Budi Santoso" required />
+        </div>
+        <div class="field">
+          <label for="stuPhone">Nomor WhatsApp (opsional)</label>
+          <input class="input" id="stuPhone" inputmode="tel" placeholder="cth. 081234567890" />
+          <small>Otomatis diubah ke format 62xxxxxxxxxx.</small>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" type="button" data-close>Batal</button>
+          <button class="btn btn-primary glass-btn" type="submit"><i data-lucide="save"></i>Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: MINGGU ================= -->
+  <div class="modal" id="weekModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="weekModalTitle">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card" data-lenis-prevent>
+      <button class="modal-close" type="button" data-close aria-label="Tutup"><i data-lucide="x"></i></button>
+      <h3 class="modal-title" id="weekModalTitle">Tambah Kolom Minggu</h3>
+      <p class="modal-sub">Setiap kolom mewakili satu kali iuran Rp 5.000 per siswa.</p>
+      <form id="weekForm" autocomplete="off" novalidate>
+        <input type="hidden" id="weekId" />
+        <div class="field">
+          <label for="weekLabel">Nama kolom</label>
+          <input class="input" id="weekLabel" maxlength="30" placeholder="cth. Minggu 9" required />
+        </div>
+        <div class="field">
+          <label for="weekDate">Tanggal bayar</label>
+          <input class="input" type="date" id="weekDate" required />
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" type="button" data-close>Batal</button>
+          <button class="btn btn-primary glass-btn" type="submit"><i data-lucide="calendar-plus"></i>Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: KONFIRMASI ================= -->
+  <div class="modal" id="confirmModal" aria-hidden="true" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card modal-card-sm" data-lenis-prevent>
+      <div class="confirm-icon" id="confirmIcon"><i data-lucide="circle-help"></i></div>
+      <h3 class="modal-title" id="confirmTitle">Yakin?</h3>
+      <p class="modal-sub" id="confirmMessage"></p>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" type="button" id="confirmCancel">Batal</button>
+        <button class="btn btn-primary" type="button" id="confirmOk">Ya, lanjutkan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= KALKULATOR MELAYANG ================= -->
+  <button class="calc-fab hidden" type="button" id="calcFab" title="Kalkulator kas" aria-label="Buka kalkulator">
+    <i data-lucide="calculator"></i>
+  </button>
+  <div class="calc" id="calc" aria-hidden="true" data-lenis-prevent>
+    <div class="calc-head" id="calcHead">
+      <span class="calc-title"><i data-lucide="grip-horizontal"></i>Kalkulator Kas</span>
+      <button class="calc-close" type="button" id="calcClose" aria-label="Tutup kalkulator"><i data-lucide="x"></i></button>
+    </div>
+    <div class="calc-tabs" role="tablist">
+      <button class="calc-tab active" type="button" data-tab="basic">Hitung</button>
+      <button class="calc-tab" type="button" data-tab="change">Kembalian</button>
+    </div>
+
+    <div class="calc-body" data-tab-panel="basic">
+      <div class="calc-display">
+        <div class="calc-expr" id="calcExpr">&nbsp;</div>
+        <div class="calc-result" id="calcResult">0</div>
+      </div>
+      <div class="calc-quick">
+        <button type="button" class="key key-quick" data-key="add5k">+5rb</button>
+        <button type="button" class="key key-quick" data-key="add10k">+10rb</button>
+        <button type="button" class="key key-quick" data-key="mul5k">×5rb</button>
+      </div>
+      <div class="calc-keys" id="calcKeys">
+        <button type="button" class="key key-clear" data-key="C">C</button>
+        <button type="button" class="key key-op" data-key="back" aria-label="Hapus">⌫</button>
+        <button type="button" class="key key-op" data-key="%">%</button>
+        <button type="button" class="key key-op" data-key="/">÷</button>
+        <button type="button" class="key" data-key="7">7</button>
+        <button type="button" class="key" data-key="8">8</button>
+        <button type="button" class="key" data-key="9">9</button>
+        <button type="button" class="key key-op" data-key="*">×</button>
+        <button type="button" class="key" data-key="4">4</button>
+        <button type="button" class="key" data-key="5">5</button>
+        <button type="button" class="key" data-key="6">6</button>
+        <button type="button" class="key key-op" data-key="-">−</button>
+        <button type="button" class="key" data-key="1">1</button>
+        <button type="button" class="key" data-key="2">2</button>
+        <button type="button" class="key" data-key="3">3</button>
+        <button type="button" class="key key-op" data-key="+">+</button>
+        <button type="button" class="key" data-key="000">000</button>
+        <button type="button" class="key" data-key="0">0</button>
+        <button type="button" class="key" data-key=".">,</button>
+        <button type="button" class="key key-eq" data-key="=">=</button>
+      </div>
+    </div>
+
+    <div class="calc-body hidden" data-tab-panel="change">
+      <div class="field">
+        <label for="chgTotal">Total tagihan (Rp)</label>
+        <input class="input" type="number" id="chgTotal" min="0" step="500" inputmode="numeric" placeholder="0" />
+      </div>
+      <div class="chip-buttons" id="chgWeeks">
+        <button type="button" data-weeks="1">1 mgg</button>
+        <button type="button" data-weeks="2">2 mgg</button>
+        <button type="button" data-weeks="3">3 mgg</button>
+        <button type="button" data-weeks="4">4 mgg</button>
+        <button type="button" data-from-calc="1">↳ dari Hitung</button>
+      </div>
+      <div class="field">
+        <label for="chgPaid">Uang diterima (Rp)</label>
+        <input class="input" type="number" id="chgPaid" min="0" step="500" inputmode="numeric" placeholder="0" />
+      </div>
+      <div class="chip-buttons" id="chgCash">
+        <button type="button" data-cash="2000">+2rb</button>
+        <button type="button" data-cash="5000">+5rb</button>
+        <button type="button" data-cash="10000">+10rb</button>
+        <button type="button" data-cash="20000">+20rb</button>
+        <button type="button" data-cash="50000">+50rb</button>
+        <button type="button" data-cash="100000">+100rb</button>
+        <button type="button" data-cash="reset" class="chip-reset">Reset</button>
+      </div>
+      <div class="chg-result" id="chgResult">
+        <span id="chgLabel">Kembalian</span>
+        <b id="chgValue">Rp 0</b>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= TOAST ================= -->
+  <div class="toast-stack" id="toastStack" aria-live="polite"></div>
+
+  <!-- ================= LIBRARY (CDN) ================= -->
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+  <script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+
+  <!-- ================= APLIKASI ================= -->
+  <script src="script.js"></script>
+</body>
+</html>
