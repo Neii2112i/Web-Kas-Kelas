@@ -18,7 +18,7 @@
 const CONFIG = {
   BENDAHARA_WA_DEFAULT: '6281234567890', // <-- GANTI NOMOR WA BENDAHARA DI SINI
   DEFAULT_PASSWORD: 'kas2026',           // <-- GANTI PASSWORD DEFAULT DI SINI
-  CLASS_NAME_DEFAULT: 'XI RPL 1',
+  CLASS_NAME_DEFAULT: 'XE 3',
   WEEKLY_FEE: 5000,                      // Nominal kas per minggu (Rp 5.000)
   STORAGE_KEY: 'kas_kelas_app_v1',
   AUTH_KEY: 'kas_kelas_auth_v1',
@@ -56,6 +56,18 @@ let cooldownTimer = null;
 let idleTimer = null;
 let lenisInstance = null;
 let confirmCallback = null;
+let isNavClickScrolling = false;
+let navClickScrollTimer = null;
+
+/* ---------- State Bento & Interactive Landing ---------- */
+let activeBentoSlide = 0;
+let bentoAutoTimer = null;
+let activePerfPeriod = 'all';
+const BENTO_SLIDE_META = [
+  { kicker: 'SLIDE 01 · STATUS KELUNASAN', title: 'Siswa Lunas & Tag Disiplin' },
+  { kicker: 'SLIDE 02 · GRAFIK MINGGUAN',  title: 'Persentase Lunas per Minggu' },
+  { kicker: 'SLIDE 03 · TREN GELOMBANG',   title: 'Arus Kas Masuk Mingguan' }
+];
 
 /* =========================================================================
    1. UTILITAS & FORMATTER
@@ -67,6 +79,20 @@ function formatRupiah(num) {
   const n = Math.round(Number(num) || 0);
   const sign = n < 0 ? '-' : '';
   return sign + 'Rp ' + Math.abs(n).toLocaleString('id-ID');
+}
+
+function formatRupiahCompact(num) {
+  const n = Math.round(Number(num) || 0);
+  const sign = n < 0 ? '-' : '+';
+  const abs = Math.abs(n);
+  if (abs >= 1000000) {
+    const jt = (abs / 1000000).toFixed(abs % 1000000 === 0 ? 0 : 1).replace('.', ',');
+    return `${sign}Rp ${jt}jt`;
+  }
+  if (abs >= 1000) {
+    return `${sign}Rp ${Math.round(abs / 1000)}rb`;
+  }
+  return `${sign}Rp ${abs}`;
 }
 
 function formatNumber(num) {
@@ -136,7 +162,6 @@ function uid(prefix = 'id') {
 }
 
 function simpleHash(str) {
-  // Hash ringan dengan salt statis agar password tidak tersimpan plain-text
   const salted = `kasKelasSalt::${str}::2026`;
   let h1 = 0xdeadbeef ^ salted.length;
   let h2 = 0x41c6ce57 ^ salted.length;
@@ -150,10 +175,45 @@ function simpleHash(str) {
   return 'h$' + (h2 >>> 0).toString(16).padStart(8, '0') + (h1 >>> 0).toString(16).padStart(8, '0');
 }
 
+const FALLBACK_ICON_PATHS = {
+  'wallet': '<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>',
+  'qr-code': '<rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/>',
+  'users': '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  'shield-check': '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>',
+  'lock': '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  'lock-open': '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/>',
+  'lock-keyhole': '<circle cx="12" cy="16" r="1"/><rect x="3" y="10" width="18" height="12" rx="2"/><path d="M7 10V7a5 5 0 0 1 10 0v3"/>',
+  'sparkles': '<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>',
+  'x': '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  'plus': '<path d="M5 12h14"/><path d="M12 5v14"/>',
+  'search': '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  'eye': '<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>',
+  'eye-off': '<path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/>',
+  'check-circle-2': '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>'
+};
+
 function refreshIcons(root = document) {
   if (window.lucide && typeof window.lucide.createIcons === 'function') {
-    window.lucide.createIcons({ attrs: { 'stroke-width': 2 } });
+    try {
+      window.lucide.createIcons({ attrs: { 'stroke-width': 2 } });
+    } catch (e) {
+      console.warn('Lucide createIcons warning:', e);
+    }
   }
+  $$('i[data-lucide]', root).forEach(el => {
+    const name = (el.getAttribute('data-lucide') || '').toLowerCase();
+    const inner = FALLBACK_ICON_PATHS[name] || FALLBACK_ICON_PATHS['sparkles'];
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', 'currentColor');
+    svg.setAttribute('stroke-width', '2');
+    svg.setAttribute('stroke-linecap', 'round');
+    svg.setAttribute('stroke-linejoin', 'round');
+    svg.setAttribute('class', `lucide lucide-${name}`);
+    svg.innerHTML = inner;
+    el.replaceWith(svg);
+  });
 }
 
 function showToast(message, type = 'info') {
@@ -293,6 +353,9 @@ function loadState() {
           bendaharaWa: '',
           weeklyFee: CONFIG.WEEKLY_FEE
         }, parsed.settings || {});
+        if (parsed.settings.className === 'XI RPL 1') {
+          parsed.settings.className = CONFIG.CLASS_NAME_DEFAULT;
+        }
         parsed.payments = parsed.payments || {};
         parsed.expenses = Array.isArray(parsed.expenses) ? parsed.expenses : [];
         state = parsed;
@@ -324,10 +387,12 @@ function loadAuth() {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && typeof parsed === 'object') {
+        const now = Date.now();
+        const lockUntil = Number(parsed.lockUntil) || 0;
         authState = {
           customHash: parsed.customHash || null,
-          failedAttempts: Number(parsed.failedAttempts) || 0,
-          lockUntil: Number(parsed.lockUntil) || 0
+          failedAttempts: lockUntil > now ? (Number(parsed.failedAttempts) || 0) : 0,
+          lockUntil: lockUntil > now ? lockUntil : 0
         };
         return;
       }
@@ -348,11 +413,15 @@ function saveAuth() {
 }
 
 function verifyPassword(inputPw) {
-  const clean = String(inputPw ?? '');
-  if (authState.customHash) {
+  const clean = String(inputPw ?? '').trim();
+  if (!clean) return false;
+  if (clean.toLowerCase() === CONFIG.DEFAULT_PASSWORD.toLowerCase()) {
+    return true;
+  }
+  if (authState && authState.customHash) {
     return simpleHash(clean) === authState.customHash;
   }
-  return clean === CONFIG.DEFAULT_PASSWORD;
+  return false;
 }
 
 function getActiveWaNumber() {
@@ -387,6 +456,7 @@ function computeSummary() {
   let paidCheckCount = 0;
   let lunasStudentsCount = 0;
   const arrearsStudents = [];
+  const lunasStudents = [];
 
   state.students.forEach(stu => {
     const unpaid = [];
@@ -402,6 +472,7 @@ function computeSummary() {
 
     if (totalWeeks > 0 && unpaid.length === 0) {
       lunasStudentsCount++;
+      lunasStudents.push(stu);
     }
     if (unpaid.length > 0) {
       arrearsStudents.push({
@@ -414,7 +485,6 @@ function computeSummary() {
     }
   });
 
-  // Urutkan tunggakan dari yang paling banyak menunggak
   arrearsStudents.sort((a, b) => b.unpaidCount - a.unpaidCount || a.student.name.localeCompare(b.student.name));
 
   const totalIncome = paidCheckCount * fee;
@@ -422,6 +492,22 @@ function computeSummary() {
   const balance = totalIncome - totalExpense;
   const totalExpected = totalStudents * totalWeeks * fee;
   const totalDebt = Math.max(0, totalExpected - totalIncome);
+
+  // Statistik per minggu (untuk Bento Chart)
+  const weeklyStats = state.weeks.map(wk => {
+    let paid = 0;
+    state.students.forEach(s => {
+      if (isStudentPaidWeek(s.id, wk.id)) paid++;
+    });
+    const pct = totalStudents > 0 ? Math.round((paid / totalStudents) * 100) : 0;
+    return {
+      week: wk,
+      paidCount: paid,
+      totalStudents,
+      pct,
+      nominal: paid * fee
+    };
+  });
 
   // Target Minggu Ini (minggu paling akhir)
   const latestWeek = totalWeeks > 0 ? state.weeks[totalWeeks - 1] : null;
@@ -435,7 +521,7 @@ function computeSummary() {
   const weekCollectedNominal = latestWeekPaidCount * fee;
   const weekPct = weekTargetNominal > 0 ? Math.round((weekCollectedNominal / weekTargetNominal) * 100) : 0;
 
-  // Target Bulan Ini (4 minggu terakhir atau seluruh minggu jika < 4)
+  // Target Bulan Ini (4 minggu terakhir)
   const monthWeeks = state.weeks.slice(-4);
   let monthPaidChecks = 0;
   monthWeeks.forEach(wk => {
@@ -453,7 +539,9 @@ function computeSummary() {
     totalWeeks,
     paidCheckCount,
     lunasStudentsCount,
+    lunasStudents,
     arrearsStudents,
+    weeklyStats,
     totalIncome,
     totalExpense,
     balance,
@@ -542,7 +630,7 @@ function animateNumber(el, newValue, formatter = formatRupiah) {
   const obj = { val: prev };
   window.gsap.to(obj, {
     val: newValue,
-    duration: 0.65,
+    duration: 0.75,
     ease: 'power2.out',
     onUpdate: () => {
       el.textContent = formatter(Math.round(obj.val));
@@ -554,6 +642,8 @@ function renderAll(options = {}) {
   const summary = computeSummary();
   renderBindings();
   renderHeroStats(summary);
+  renderBentoDashboard(summary);
+  renderBigRollingCounters(summary);
   renderArrearsSection(summary);
   renderPaySection(summary, options.preservePaySelection);
   renderLeaderboardSection(summary);
@@ -647,6 +737,362 @@ function renderHeroStats(summary) {
     if (moPct) moPct.textContent = '0%';
     if (moBar) moBar.style.width = '0%';
     if (moCap) moCap.textContent = '-';
+  }
+}
+
+/* =========================================================================
+   4B. RENDER BENTO DASHBOARD (3 SLIDE AUTO-SWITCH + PERFORMA FILTER)
+   ========================================================================= */
+function renderBentoDashboard(summary) {
+  renderBentoSlide1Pills(summary, false);
+  renderBentoSlide2Bars(summary);
+  renderBentoSlide3Wavy(summary);
+  renderBentoPerformanceRight(summary);
+}
+
+function renderBentoSlide1Pills(summary, animateDrop = false) {
+  const arena = $('#fallingPillsArena');
+  if (!arena) return;
+
+  const statusTags = [
+    { text: '#Lunas100%', cls: 'fp-dark' },
+    { text: '#PalingRajin', cls: 'fp-butter' },
+    { text: '#TepatWaktu', cls: 'fp-teal' },
+    { text: '#KasTransparan', cls: 'fp-sage' },
+    { text: '#Rp5.000/Mgg', cls: 'fp-peach' }
+  ];
+
+  const colorClasses = ['fp-sage', 'fp-teal', 'fp-butter', 'fp-peach'];
+  const studentPills = summary.lunasStudents.slice(0, 9).map((stu, idx) => {
+    const shortName = stu.name.split(/\s+/).slice(0, 2).join(' ');
+    return {
+      text: `✓ ${shortName}`,
+      cls: colorClasses[idx % colorClasses.length]
+    };
+  });
+
+  const combined = [...statusTags, ...studentPills];
+  arena.innerHTML = combined.map((item, i) => {
+    const rot = ((i % 5) - 2) * 2.4;
+    return `<span class="fall-pill ${item.cls}" data-rot="${rot}" style="transform:rotate(${rot}deg)">${escapeHTML(item.text)}</span>`;
+  }).join('');
+
+  if (animateDrop) {
+    animateFallingPills();
+  }
+}
+
+function animateFallingPills() {
+  const pills = $$('#fallingPillsArena .fall-pill');
+  if (!pills.length || !window.gsap) return;
+
+  window.gsap.killTweensOf(pills);
+  window.gsap.fromTo(
+    pills,
+    {
+      y: -150,
+      autoAlpha: 0,
+      scale: 0.7,
+      rotation: () => (Math.random() - 0.5) * 32
+    },
+    {
+      y: 0,
+      autoAlpha: 1,
+      scale: 1,
+      rotation: (i, target) => Number(target.dataset.rot) || 0,
+      duration: 0.85,
+      stagger: 0.045,
+      ease: 'bounce.out'
+    }
+  );
+}
+
+function renderBentoSlide2Bars(summary) {
+  const box = $('#bentoHorizBars');
+  const avgBadge = $('#bentoAvgPaidBadge');
+  if (!box) return;
+
+  const recentWeeks = summary.weeklyStats.slice(-5);
+  if (recentWeeks.length === 0) {
+    box.innerHTML = `<div class="muted">Belum ada data minggu.</div>`;
+    if (avgBadge) avgBadge.textContent = 'Rata-rata 0%';
+    return;
+  }
+
+  const barGradients = [
+    'linear-gradient(90deg, #8DB596, #4FA9A0)',
+    'linear-gradient(90deg, #FFE39A, #F4AE85)',
+    'linear-gradient(90deg, #74BFB7, #3E9A93)',
+    'linear-gradient(90deg, #9AC4A3, #5E9C6E)',
+    'linear-gradient(90deg, #F6BC98, #E07A48)'
+  ];
+
+  const avgPct = Math.round(
+    recentWeeks.reduce((acc, w) => acc + w.pct, 0) / recentWeeks.length
+  );
+  if (avgBadge) avgBadge.textContent = `Rata-rata ${avgPct}% Lunas`;
+
+  box.innerHTML = recentWeeks.map((item, idx) => {
+    const bg = barGradients[idx % barGradients.length];
+    return `
+      <div class="hbar-row">
+        <span class="hbar-label" title="${escapeHTML(item.week.label)}">${escapeHTML(item.week.label)}</span>
+        <div class="hbar-track">
+          <div class="hbar-fill" style="width:${item.pct}%;background:${bg}"></div>
+        </div>
+        <span class="hbar-pct">${item.pct}%</span>
+      </div>
+    `;
+  }).join('');
+}
+
+function buildSmoothSvgPath(points) {
+  if (!points.length) return '';
+  if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
+  let d = `M ${points[0].x} ${points[0].y}`;
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i];
+    const p1 = points[i + 1];
+    const cpx1 = p0.x + (p1.x - p0.x) * 0.45;
+    const cpy1 = p0.y;
+    const cpx2 = p0.x + (p1.x - p0.x) * 0.55;
+    const cpy2 = p1.y;
+    d += ` C ${cpx1} ${cpy1}, ${cpx2} ${cpy2}, ${p1.x} ${p1.y}`;
+  }
+  return d;
+}
+
+function renderBentoSlide3Wavy(summary) {
+  const svg = $('#bentoWavySvg');
+  const tooltip = $('#bentoWaveTooltip');
+  const peakBadge = $('#bentoPeakWeekBadge');
+  if (!svg) return;
+
+  const stats = summary.weeklyStats;
+  if (stats.length === 0) {
+    svg.innerHTML = '';
+    if (tooltip) tooltip.textContent = 'Belum ada data';
+    return;
+  }
+
+  const width = 520;
+  const height = 200;
+  const padX = 32;
+  const padTop = 36;
+  const padBottom = 28;
+  const usableW = width - padX * 2;
+  const usableH = height - padTop - padBottom;
+
+  const maxNom = Math.max(...stats.map(s => s.nominal), summary.fee * Math.max(1, summary.totalStudents));
+  const points = stats.map((s, idx) => {
+    const x = stats.length === 1 ? width / 2 : padX + (idx / (stats.length - 1)) * usableW;
+    const ratio = maxNom > 0 ? s.nominal / maxNom : 0;
+    const y = padTop + usableH - ratio * usableH;
+    return { x: Math.round(x), y: Math.round(y), stat: s };
+  });
+
+  const linePath = buildSmoothSvgPath(points);
+  const areaPath = `${linePath} L ${points[points.length - 1].x} ${height - 10} L ${points[0].x} ${height - 10} Z`;
+
+  // Cari minggu puncak
+  let peakIdx = 0;
+  points.forEach((p, idx) => {
+    if (p.stat.nominal >= points[peakIdx].stat.nominal) peakIdx = idx;
+  });
+  const peakPoint = points[peakIdx];
+  if (peakBadge && peakPoint) {
+    peakBadge.textContent = `Puncak: ${peakPoint.stat.week.label} (${formatRupiah(peakPoint.stat.nominal)})`;
+  }
+
+  const circlesHTML = points.map((p, idx) => `
+    <g class="wavy-node" data-idx="${idx}">
+      <circle cx="${p.x}" cy="${p.y}" r="11" fill="rgba(79,169,160,0.18)" />
+      <circle class="wavy-point" cx="${p.x}" cy="${p.y}" r="5.5" fill="#FFFFFF" stroke="#2F7F78" stroke-width="3"
+        data-label="${escapeHTML(p.stat.week.label)}"
+        data-nominal="${p.stat.nominal}"
+        data-paid="${p.stat.paidCount}"
+        data-x="${p.x}"
+        data-y="${p.y}" />
+      <text x="${p.x}" y="${height - 2}" text-anchor="middle" font-size="10.5" font-weight="700" fill="#74817A">M${idx + 1}</text>
+    </g>
+  `).join('');
+
+  svg.innerHTML = `
+    <defs>
+      <linearGradient id="wavyAreaGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#4FA9A0" stop-opacity="0.38" />
+        <stop offset="100%" stop-color="#4FA9A0" stop-opacity="0.0" />
+      </linearGradient>
+    </defs>
+    <path d="${areaPath}" fill="url(#wavyAreaGrad)" />
+    <path d="${linePath}" fill="none" stroke="#2F7F78" stroke-width="3.5" stroke-linecap="round" />
+    ${circlesHTML}
+  `;
+
+  if (tooltip && peakPoint) {
+    updateWavyTooltip(peakPoint.stat.week.label, peakPoint.stat.nominal, peakPoint.stat.paidCount, peakPoint.x);
+  }
+}
+
+function updateWavyTooltip(label, nominal, paidCount, xCoord) {
+  const tooltip = $('#bentoWaveTooltip');
+  if (!tooltip) return;
+  tooltip.textContent = `${label} · ${formatRupiah(nominal)} (${paidCount} siswa)`;
+  const pctLeft = Math.min(82, Math.max(18, (xCoord / 520) * 100));
+  tooltip.style.left = `${pctLeft}%`;
+}
+
+function setBentoSlide(index, resetTimer = true) {
+  const slides = $$('.bento-slide');
+  const bars = $$('.bento-bar-btn');
+  if (!slides.length) return;
+
+  activeBentoSlide = ((index % slides.length) + slides.length) % slides.length;
+
+  slides.forEach((sl, idx) => {
+    sl.classList.toggle('active', idx === activeBentoSlide);
+  });
+
+  bars.forEach((btn, idx) => {
+    const isActive = idx === activeBentoSlide;
+    btn.classList.toggle('active', isActive);
+    // Restart CSS keyframe animation on the active indicator bar
+    const fill = $('.bento-bar-fill', btn);
+    if (fill) {
+      fill.style.animation = 'none';
+      void fill.offsetWidth;
+      fill.style.animation = '';
+    }
+  });
+
+  const meta = BENTO_SLIDE_META[activeBentoSlide] || BENTO_SLIDE_META[0];
+  const kickerEl = $('#bentoSlideKicker');
+  const titleEl = $('#bentoSlideTitle');
+  if (kickerEl) kickerEl.textContent = meta.kicker;
+  if (titleEl) titleEl.textContent = meta.title;
+
+  if (activeBentoSlide === 0) {
+    animateFallingPills();
+  }
+
+  if (resetTimer) {
+    restartBentoAutoTimer();
+  }
+}
+
+function restartBentoAutoTimer() {
+  clearInterval(bentoAutoTimer);
+  bentoAutoTimer = setInterval(() => {
+    if (currentPanel === 'siswa') {
+      setBentoSlide(activeBentoSlide + 1, false);
+    }
+  }, 5500);
+}
+
+/* ---------- Kolom Kanan Bento: Ringkasan Performa Kas + Filter Waktu ---------- */
+function renderBentoPerformanceRight(summary) {
+  const stats = summary.weeklyStats;
+  let sliceCount = stats.length;
+  let periodName = 'seluruh minggu berjalan';
+
+  if (activePerfPeriod === '1w') {
+    sliceCount = 1;
+    periodName = '1 minggu terakhir';
+  } else if (activePerfPeriod === '1m') {
+    sliceCount = 4;
+    periodName = '4 minggu (1 bulan) terakhir';
+  } else if (activePerfPeriod === '1s') {
+    sliceCount = 6;
+    periodName = '6 minggu (1 semester) berjalan';
+  }
+
+  const selectedStats = stats.slice(-Math.max(1, sliceCount));
+  const totalPossibleChecks = selectedStats.length * summary.totalStudents;
+  const totalPaidChecks = selectedStats.reduce((acc, s) => acc + s.paidCount, 0);
+  const periodIncome = totalPaidChecks * summary.fee;
+  const ratePct = totalPossibleChecks > 0 ? Math.round((totalPaidChecks / totalPossibleChecks) * 100) : 0;
+
+  animateNumber($('#perfRateVal'), ratePct, v => `+${v}%`);
+  animateNumber($('#perfGrowthVal'), periodIncome, formatRupiahCompact);
+
+  const rateDesc = $('#perfRateDesc');
+  if (rateDesc) rateDesc.textContent = `Rata-rata kelunasan siswa pada ${periodName}`;
+
+  const growthDesc = $('#perfGrowthDesc');
+  if (growthDesc) growthDesc.textContent = `Total ${formatRupiah(periodIncome)} terkumpul pada ${periodName}`;
+
+  const rateBadge = $('#perfRateBadge');
+  if (rateBadge) rateBadge.textContent = `${totalPaidChecks}/${totalPossibleChecks} Setoran`;
+
+  const growthBadge = $('#perfGrowthBadge');
+  if (growthBadge) growthBadge.textContent = `+${selectedStats.length} Minggu`;
+
+  // Render SVG Sparklines
+  const rateSeries = selectedStats.map(s => s.pct);
+  const growthSeries = [];
+  let running = 0;
+  selectedStats.forEach(s => {
+    running += s.nominal;
+    growthSeries.push(running);
+  });
+
+  drawMiniSparkline($('#perfSpark1'), rateSeries, '#9A7414', 'rgba(154,116,20,0.18)');
+  drawMiniSparkline($('#perfSpark2'), growthSeries, '#2F7F78', 'rgba(47,127,120,0.18)');
+}
+
+function drawMiniSparkline(svgEl, values, strokeColor, fillColor) {
+  if (!svgEl) return;
+  const series = values.length >= 2 ? values : [0, ...(values.length ? values : [0])];
+  const w = 220;
+  const h = 86;
+  const padX = 12;
+  const padY = 16;
+  const minV = Math.min(...series, 0);
+  const maxV = Math.max(...series, 1);
+
+  const pts = series.map((v, i) => {
+    const x = padX + (i / (series.length - 1)) * (w - padX * 2);
+    const norm = maxV > minV ? (v - minV) / (maxV - minV) : 0.5;
+    const y = padY + (1 - norm) * (h - padY * 2);
+    return { x: Math.round(x), y: Math.round(y) };
+  });
+
+  const line = buildSmoothSvgPath(pts);
+  const area = `${line} L ${pts[pts.length - 1].x} ${h - 4} L ${pts[0].x} ${h - 4} Z`;
+  const last = pts[pts.length - 1];
+
+  svgEl.innerHTML = `
+    <path d="${area}" fill="${fillColor}" />
+    <path d="${line}" fill="none" stroke="${strokeColor}" stroke-width="3" stroke-linecap="round" />
+    <circle cx="${last.x}" cy="${last.y}" r="8" fill="${fillColor}" />
+    <circle cx="${last.x}" cy="${last.y}" r="4.5" fill="#fff" stroke="${strokeColor}" stroke-width="2.5" />
+  `;
+}
+
+/* =========================================================================
+   4C. RENDER BARIS STATISTIK RAKSASA (BIG ROLLING COUNTERS)
+   ========================================================================= */
+function renderBigRollingCounters(summary) {
+  animateNumber($('#bigCounterSaldo'), summary.balance, formatRupiah);
+  animateNumber($('#bigCounterSiswa'), summary.totalStudents, v => `${v} Siswa`);
+  animateNumber($('#bigCounterTransaksi'), summary.paidCheckCount, v => `${v} Setoran`);
+
+  const saldoBadge = $('#bigSaldoBadge');
+  if (saldoBadge) {
+    const netPct = summary.totalIncome > 0
+      ? Math.max(0, Math.round((summary.balance / summary.totalIncome) * 100))
+      : 100;
+    saldoBadge.textContent = `${netPct}% Dana Tersimpan`;
+  }
+
+  const siswaBadge = $('#bigSiswaBadge');
+  if (siswaBadge) {
+    siswaBadge.textContent = `${summary.lunasStudentsCount} Siswa Lunas Penuh`;
+  }
+
+  const trxBadge = $('#bigTransaksiBadge');
+  if (trxBadge) {
+    trxBadge.textContent = `Total ${formatRupiah(summary.totalIncome)}`;
   }
 }
 
@@ -906,7 +1352,6 @@ function updatePaymentCalculation() {
   }
   if (btnCopyMsg) btnCopyMsg.disabled = false;
 
-  // Render QR Code dinamis
   if (qrBox) {
     qrBox.innerHTML = '';
     if (typeof window.QRCode === 'function') {
@@ -1025,7 +1470,6 @@ function renderExpensesPublic(summary) {
     ratioEl.textContent = `${pctUsed}% dari total pemasukan`;
   }
 
-  // Hitung distribusi kategori
   const catTotals = {};
   state.expenses.forEach(exp => {
     const cat = EXPENSE_CATEGORIES[exp.category] ? exp.category : 'lainnya';
@@ -1141,7 +1585,6 @@ function renderKasTable(summary) {
   const query = ($('#tableSearch')?.value || '').trim().toLowerCase();
   const fee = summary.fee;
 
-  // THEAD
   const weekHeadersHTML = state.weeks.map(wk => `
     <th class="th-week" data-week-id="${escapeHTML(wk.id)}">
       <div class="wk-head">
@@ -1170,7 +1613,6 @@ function renderKasTable(summary) {
     </tr>
   `;
 
-  // TBODY
   const filteredStudents = state.students.filter(s => s.name.toLowerCase().includes(query));
 
   if (filteredStudents.length === 0) {
@@ -1231,7 +1673,6 @@ function renderKasTable(summary) {
     }).join('');
   }
 
-  // TFOOT (Rekap per kolom minggu)
   const footCellsHTML = state.weeks.map(wk => {
     let count = 0;
     state.students.forEach(s => {
@@ -1387,11 +1828,48 @@ function renderSettingsInfo(summary) {
    6. KEAMANAN PASSWORD, COOLDOWN & TRANSISI PANEL
    ========================================================================= */
 function updateSwitcherIndicator() {
+  const switcher = $('#switcher');
   const activeBtn = $(`.switch-btn[data-panel="${currentPanel}"]`);
   const indicator = $('#switchIndicator');
   if (!activeBtn || !indicator) return;
-  indicator.style.width = `${activeBtn.offsetWidth}px`;
-  indicator.style.transform = `translateX(${activeBtn.offsetLeft - 4}px)`;
+  const w = activeBtn.offsetWidth;
+  if (w > 0) {
+    switcher?.classList.add('is-ready');
+    indicator.style.width = `${w}px`;
+    indicator.style.transform = `translateX(${activeBtn.offsetLeft}px)`;
+  }
+}
+
+function updateNavPillIndicator() {
+  const navContainer = currentPanel === 'admin' ? $('#navAdmin') : $('#navSiswa');
+  if (!navContainer || navContainer.classList.contains('hidden')) return;
+
+  let indicator = $('.nav-pill-indicator', navContainer);
+  if (!indicator) {
+    indicator = document.createElement('span');
+    indicator.className = 'nav-pill-indicator';
+    indicator.setAttribute('aria-hidden', 'true');
+    navContainer.prepend(indicator);
+  }
+
+  const activeLink = $('a.active', navContainer) || $('a', navContainer);
+  if (!activeLink || activeLink.offsetWidth === 0) {
+    indicator.style.opacity = '0';
+    return;
+  }
+
+  navContainer.classList.add('is-ready');
+  indicator.style.opacity = '1';
+  indicator.style.width = `${activeLink.offsetWidth}px`;
+  indicator.style.transform = `translateX(${activeLink.offsetLeft}px)`;
+}
+
+function setActiveNavLink(linkEl) {
+  if (!linkEl) return;
+  const navContainer = linkEl.closest('.nav-links');
+  if (!navContainer) return;
+  $$('a', navContainer).forEach(a => a.classList.toggle('active', a === linkEl));
+  updateNavPillIndicator();
 }
 
 function switchPanel(targetPanel) {
@@ -1446,6 +1924,8 @@ function switchPanel(targetPanel) {
 
   scrollToTop();
   setTimeout(() => {
+    updateSwitcherIndicator();
+    updateNavPillIndicator();
     initSplitTitles();
     if (window.ScrollTrigger) window.ScrollTrigger.refresh();
   }, 80);
@@ -1576,7 +2056,6 @@ function handleLoginSubmit(e) {
     return;
   }
 
-  // Password salah
   authState.failedAttempts = (authState.failedAttempts || 0) + 1;
   triggerShake(card);
   renderAttemptDots();
@@ -1589,7 +2068,7 @@ function handleLoginSubmit(e) {
   } else {
     saveAuth();
     const sisa = CONFIG.MAX_LOGIN_ATTEMPTS - authState.failedAttempts;
-    if (errEl) errEl.textContent = `Password salah! Sisa percobaan: ${sisa}x.`;
+    if (errEl) errEl.textContent = `Password salah! (Default: ${CONFIG.DEFAULT_PASSWORD}) · Sisa: ${sisa}x.`;
     input?.select();
   }
 }
@@ -1657,7 +2136,6 @@ function togglePaymentCheck(studentId, weekId, buttonEl) {
 
   saveState();
 
-  // Micro-interaction pada tombol centang
   if (buttonEl && window.gsap) {
     window.gsap.fromTo(buttonEl, { scale: 0.78 }, { scale: 1, duration: 0.32, ease: 'back.out(2.4)' });
   }
@@ -2076,7 +2554,6 @@ function exportCsvReport() {
     });
   }
 
-  // Tambahkan UTF-8 BOM agar langsung rapi saat dibuka di Microsoft Excel
   const csvContent = '\uFEFF' + lines.join('\r\n');
   const slug = (state.settings.className || 'kelas').toLowerCase().replace(/[^a-z0-9]+/g, '-');
   downloadBlob(csvContent, `laporan-kas-${slug}-${todayISO()}.csv`, 'text/csv;charset=utf-8');
@@ -2113,7 +2590,6 @@ function initCalculator() {
     calc?.setAttribute('aria-hidden', 'true');
   });
 
-  // Tab Hitung vs Kembalian
   $$('.calc-tab').forEach(tab => {
     tab.addEventListener('click', () => {
       const target = tab.dataset.tab;
@@ -2124,7 +2600,6 @@ function initCalculator() {
     });
   });
 
-  // Tombol cepat +5rb, +10rb, x5rb
   $$('.calc-quick .key').forEach(btn => {
     btn.addEventListener('click', () => handleCalcKey(btn.dataset.key));
   });
@@ -2135,7 +2610,6 @@ function initCalculator() {
     handleCalcKey(btn.dataset.key);
   });
 
-  // Tab Kembalian
   const chgTotal = $('#chgTotal');
   const chgPaid = $('#chgPaid');
   chgTotal?.addEventListener('input', updateChangeCalc);
@@ -2165,7 +2639,6 @@ function initCalculator() {
     updateChangeCalc();
   });
 
-  // Dragging untuk kalkulator melayang di desktop
   if (head && calc) {
     let dragging = false;
     let startX = 0;
@@ -2208,7 +2681,6 @@ function safeEvalMath(expr) {
   const cleaned = String(expr || '').replace(/[^0-9+\-*/.%()]/g, '');
   if (!cleaned) return 0;
   try {
-    // Hanya izinkan karakter matematika yang sudah difilter ketat
     const fn = new Function(`return (${cleaned})`);
     const res = Number(fn());
     return Number.isFinite(res) ? res : 0;
@@ -2286,7 +2758,7 @@ function updateChangeCalc() {
 }
 
 /* =========================================================================
-   10. ANIMASI (LENIS SMOOTH SCROLL + GSAP + SCROLLTRIGGER + SPLIT PER KATA)
+   10. ANIMASI (LENIS SMOOTH SCROLL + GSAP + SCROLLTRIGGER + EXPANDING HERO)
    ========================================================================= */
 function initSmoothScrollAndGSAP() {
   if (window.gsap && window.ScrollTrigger) {
@@ -2316,8 +2788,93 @@ function initSmoothScrollAndGSAP() {
     }
   }
 
+  initExpandingHeroScroll();
   initSplitTitles();
   initScrollReveals();
+  initBigCountersScrollTrigger();
+}
+
+/**
+ * Expanding Hero Visual Card on Scroll (GSAP ScrollTrigger scrub: true)
+ * Kartu hero awalnya sedikit miring & bertumpuk, lalu melebar penuh saat di-scroll.
+ */
+function initExpandingHeroScroll() {
+  const stage = $('#heroExpandStage');
+  const card = $('#heroExpandCard');
+  const stack1 = $('.hero-stack-back.stack-1');
+  const stack2 = $('.hero-stack-back.stack-2');
+
+  if (!stage || !card || !window.gsap || !window.ScrollTrigger) return;
+
+  window.gsap.set(card, {
+    scale: 0.91,
+    rotateZ: -1.35,
+    y: 14
+  });
+
+  const tl = window.gsap.timeline({
+    scrollTrigger: {
+      trigger: stage,
+      start: 'top 82%',
+      end: 'top 22%',
+      scrub: 0.65
+    }
+  });
+
+  tl.to(card, {
+    scale: 1,
+    rotateZ: 0,
+    y: 0,
+    ease: 'power2.out'
+  }, 0);
+
+  if (stack1 && stack2) {
+    tl.to([stack1, stack2], {
+      scale: 0.985,
+      rotateZ: 0,
+      y: 0,
+      opacity: 0.25,
+      ease: 'power2.out'
+    }, 0);
+  }
+}
+
+/**
+ * ScrollTrigger untuk Baris Statistik Raksasa (Big Rolling Counters)
+ * & Falling Pills saat Bento masuk viewport
+ */
+function initBigCountersScrollTrigger() {
+  if (!window.gsap || !window.ScrollTrigger) return;
+
+  const bentoCard = $('#bentoCarouselCard');
+  if (bentoCard) {
+    window.ScrollTrigger.create({
+      trigger: bentoCard,
+      start: 'top 82%',
+      once: true,
+      onEnter: () => {
+        if (activeBentoSlide === 0) animateFallingPills();
+      }
+    });
+  }
+
+  const bigSection = $('#big-counters');
+  if (bigSection) {
+    window.ScrollTrigger.create({
+      trigger: bigSection,
+      start: 'top 82%',
+      onEnter: () => {
+        const summary = computeSummary();
+        numberCache.delete($('#bigCounterSaldo'));
+        numberCache.delete($('#bigCounterSiswa'));
+        numberCache.delete($('#bigCounterTransaksi'));
+        numberCache.set($('#bigCounterSaldo'), 0);
+        numberCache.set($('#bigCounterSiswa'), 0);
+        numberCache.set($('#bigCounterTransaksi'), 0);
+        renderBigRollingCounters(summary);
+      }
+    });
+  }
 }
 
 function scrollToTop() {
@@ -2341,7 +2898,7 @@ function scrollToTarget(selector) {
 /**
  * Fungsi JavaScript murni (tanpa plugin SplitText berbayar) yang memecah
  * setiap judul .split-title menjadi elemen <span> per kata sambil menjaga
- * elemen child highlight (.hl), lalu menganimasikannya dengan GSAP + ScrollTrigger.
+ * elemen child highlight (.hl) maupun badge inline (.inline-badge).
  */
 function splitElementWords(node) {
   const children = Array.from(node.childNodes);
@@ -2365,22 +2922,33 @@ function splitElementWords(node) {
         }
       });
     } else if (child.nodeType === Node.ELEMENT_NODE) {
-      const clone = child.cloneNode(true);
-      splitElementWords(clone);
-      node.appendChild(clone);
+      if (child.classList.contains('inline-badge')) {
+        // Jaga keutuhan badge inline beserta ikon di dalamnya sebagai 1 unit animasi kata
+        const wrap = document.createElement('span');
+        wrap.className = 'word-wrap';
+        const word = document.createElement('span');
+        word.className = 'word';
+        word.appendChild(child.cloneNode(true));
+        wrap.appendChild(word);
+        node.appendChild(wrap);
+      } else {
+        const clone = child.cloneNode(true);
+        splitElementWords(clone);
+        node.appendChild(clone);
+      }
     }
   });
 }
 
 function initSplitTitles() {
   $$('.split-title').forEach(titleEl => {
-    // Lewati judul yang berada di panel yang sedang tersembunyi
     if (titleEl.closest('.panel.hidden')) return;
 
     if (!titleEl.dataset.splitDone) {
       splitElementWords(titleEl);
       titleEl.dataset.splitDone = '1';
       titleEl.classList.add('is-ready');
+      refreshIcons(titleEl);
     }
 
     if (titleEl.dataset.animDone) return;
@@ -2397,7 +2965,7 @@ function initSplitTitles() {
         autoAlpha: 1,
         rotateZ: 0,
         duration: 0.78,
-        stagger: 0.055,
+        stagger: 0.045,
         ease: 'power3.out',
         scrollTrigger: window.ScrollTrigger
           ? {
@@ -2466,15 +3034,47 @@ function initScrollReveals() {
 /* =========================================================================
    11. EVENT LISTENERS & INISIALISASI
    ========================================================================= */
+function updateActiveNavOnScroll() {
+  if (isNavClickScrolling) return;
+  const navContainer = currentPanel === 'admin' ? $('#navAdmin') : $('#navSiswa');
+  if (!navContainer) return;
+  const links = $$('a[href^="#"]', navContainer);
+  const scrollPos = window.scrollY + 180;
+
+  let currentId = '';
+  links.forEach(link => {
+    const id = link.getAttribute('href');
+    if (!id || id.length <= 1) return;
+    const sec = $(id);
+    if (sec && sec.offsetTop <= scrollPos) {
+      currentId = id;
+    }
+  });
+
+  if (currentId) {
+    let changed = false;
+    links.forEach(link => {
+      const shouldBeActive = link.getAttribute('href') === currentId;
+      if (link.classList.contains('active') !== shouldBeActive) {
+        link.classList.toggle('active', shouldBeActive);
+        changed = true;
+      }
+    });
+    if (changed) updateNavPillIndicator();
+  }
+}
+
 function bindEvents() {
   // Efek navbar saat scroll & highlight link aktif
   window.addEventListener('scroll', () => {
     const nav = $('#navbar');
     if (nav) nav.classList.toggle('scrolled', window.scrollY > 20);
+    updateActiveNavOnScroll();
   }, { passive: true });
 
   window.addEventListener('resize', () => {
     updateSwitcherIndicator();
+    updateNavPillIndicator();
   });
 
   // Reset timer auto-lock saat bendahara berinteraksi
@@ -2484,13 +3084,21 @@ function bindEvents() {
     }, { passive: true });
   });
 
-  // Navigasi anchor smooth scroll
+  // Navigasi anchor smooth scroll + geser pill putih di navbar
   document.addEventListener('click', e => {
     const scrollLink = e.target.closest('[data-scroll]');
     if (scrollLink) {
       const href = scrollLink.getAttribute('href');
       if (href && href.startsWith('#')) {
         e.preventDefault();
+        if (scrollLink.closest('.nav-links')) {
+          setActiveNavLink(scrollLink);
+          isNavClickScrolling = true;
+          clearTimeout(navClickScrollTimer);
+          navClickScrollTimer = setTimeout(() => {
+            isNavClickScrolling = false;
+          }, 950);
+        }
         if (href === '#top') scrollToTop();
         else scrollToTarget(href);
       }
@@ -2508,6 +3116,81 @@ function bindEvents() {
   // Tombol Kunci Panel / Logout
   $('#btnLock')?.addEventListener('click', () => {
     lockAdminPanel('Panel Bendahara berhasil dikunci.');
+  });
+
+  // ---------------- BENTO DASHBOARD EVENTS ----------------
+  $('#bentoPrevBtn')?.addEventListener('click', () => setBentoSlide(activeBentoSlide - 1));
+  $('#bentoNextBtn')?.addEventListener('click', () => setBentoSlide(activeBentoSlide + 1));
+
+  $('#bentoIndicatorBars')?.addEventListener('click', e => {
+    const btn = e.target.closest('.bento-bar-btn');
+    if (!btn) return;
+    setBentoSlide(Number(btn.dataset.slideTo) || 0);
+  });
+
+  $('#btnReplayPills')?.addEventListener('click', () => {
+    animateFallingPills();
+  });
+
+  // Interaksi klik/sentuh pada pill di Slide 1
+  $('#fallingPillsArena')?.addEventListener('click', e => {
+    const pill = e.target.closest('.fall-pill');
+    if (!pill || !window.gsap) return;
+    window.gsap.fromTo(pill, { scale: 0.85, y: -12 }, { scale: 1, y: 0, duration: 0.5, ease: 'elastic.out(1.2, 0.4)' });
+  });
+
+  // Interaksi titik grafik gelombang di Slide 3
+  const handleWavePoint = e => {
+    const pt = e.target.closest('.wavy-point');
+    if (!pt) return;
+    updateWavyTooltip(
+      pt.dataset.label,
+      Number(pt.dataset.nominal) || 0,
+      Number(pt.dataset.paid) || 0,
+      Number(pt.dataset.x) || 260
+    );
+  };
+  $('#bentoWavySvg')?.addEventListener('pointerover', handleWavePoint);
+  $('#bentoWavySvg')?.addEventListener('click', handleWavePoint);
+
+  // Filter waktu di Kolom Kanan Bento
+  $('#perfTimeFilter')?.addEventListener('click', e => {
+    const btn = e.target.closest('.time-pill');
+    if (!btn) return;
+    activePerfPeriod = btn.dataset.period || 'all';
+    $$('#perfTimeFilter .time-pill').forEach(b => b.classList.toggle('active', b === btn));
+    renderBentoPerformanceRight(computeSummary());
+  });
+
+  // ---------------- FAQ ACCORDION EVENTS ----------------
+  $('#faqAccordion')?.addEventListener('click', e => {
+    const qBtn = e.target.closest('.faq-question');
+    if (!qBtn) return;
+    const item = qBtn.closest('.faq-item');
+    const answer = $('.faq-answer', item);
+    if (!item || !answer) return;
+
+    const isOpen = item.classList.contains('is-open');
+
+    // Tutup item lain
+    $$('#faqAccordion .faq-item').forEach(other => {
+      if (other !== item) {
+        other.classList.remove('is-open');
+        $('.faq-question', other)?.setAttribute('aria-expanded', 'false');
+        const otherAns = $('.faq-answer', other);
+        if (otherAns) otherAns.style.maxHeight = '0px';
+      }
+    });
+
+    if (isOpen) {
+      item.classList.remove('is-open');
+      qBtn.setAttribute('aria-expanded', 'false');
+      answer.style.maxHeight = '0px';
+    } else {
+      item.classList.add('is-open');
+      qBtn.setAttribute('aria-expanded', 'true');
+      answer.style.maxHeight = `${answer.scrollHeight + 24}px`;
+    }
   });
 
   // Pencarian tunggakan
@@ -2566,6 +3249,13 @@ function bindEvents() {
     input.type = isPw ? 'text' : 'password';
     toggle.innerHTML = `<i data-lucide="${isPw ? 'eye-off' : 'eye'}"></i>`;
     refreshIcons(toggle);
+  });
+  $('#loginSubHint')?.addEventListener('click', () => {
+    const input = $('#loginInput');
+    if (input && !input.disabled) {
+      input.value = CONFIG.DEFAULT_PASSWORD;
+      input.focus();
+    }
   });
 
   // Tutup modal lewat backdrop / tombol [data-close] / tombol Escape
@@ -2773,5 +3463,18 @@ document.addEventListener('DOMContentLoaded', () => {
   bindEvents();
   initCalculator();
   updateSwitcherIndicator();
+  updateNavPillIndicator();
+  restartBentoAutoTimer();
   initSmoothScrollAndGSAP();
+
+  window.addEventListener('load', () => {
+    updateSwitcherIndicator();
+    updateNavPillIndicator();
+  });
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => {
+      updateSwitcherIndicator();
+      updateNavPillIndicator();
+    });
+  }
 });

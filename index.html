@@ -9,9 +9,9 @@
   <script>document.documentElement.classList.add('js');</script>
 
   <!-- Google Fonts: Bricolage Grotesque (judul unik & proporsional) + Plus Jakarta Sans (isi & angka) -->
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -26,23 +26,27 @@
     <div class="bg-grid"></div>
   </div>
 
-  <!-- ================= NAVBAR MELAYANG ================= -->
+  <!-- ================= 1. FLOATING GLASS NAVBAR ================= -->
   <header class="navbar glass" id="navbar">
     <a href="#top" class="brand" data-scroll aria-label="Kas Kelas - kembali ke atas">
       <span class="brand-logo"><i data-lucide="wallet"></i></span>
       <span class="brand-text">Kas<span>Kelas</span></span>
     </a>
 
-    <nav class="nav-links" id="navSiswa" aria-label="Navigasi panel siswa">
-      <a href="#ringkasan" data-scroll>Ringkasan</a>
+    <!-- Menu Pill Kaca Transparan di Tengah (Panel Siswa) -->
+    <nav class="nav-links nav-pill-glass" id="navSiswa" aria-label="Navigasi panel siswa">
+      <a href="#ringkasan" class="active" data-scroll>Ringkasan</a>
+      <a href="#bento-dashboard" data-scroll>Analitik</a>
+      <a href="#cara-bayar" data-scroll>Cara Bayar</a>
       <a href="#tunggakan" data-scroll>Tunggakan</a>
-      <a href="#bayar" data-scroll>Bayar</a>
-      <a href="#rajin" data-scroll>Paling Rajin</a>
+      <a href="#bayar" data-scroll>Bayar QR</a>
       <a href="#pengeluaran" data-scroll>Pengeluaran</a>
+      <a href="#faq" data-scroll>FAQ</a>
     </nav>
 
-    <nav class="nav-links hidden" id="navAdmin" aria-label="Navigasi panel bendahara">
-      <a href="#admin-ringkasan" data-scroll>Ringkasan</a>
+    <!-- Menu Pill Kaca Transparan di Tengah (Panel Bendahara) -->
+    <nav class="nav-links nav-pill-glass hidden" id="navAdmin" aria-label="Navigasi panel bendahara">
+      <a href="#admin-ringkasan" class="active" data-scroll>Ringkasan</a>
       <a href="#tabel" data-scroll>Tabel Kas</a>
       <a href="#kelola-siswa" data-scroll>Siswa</a>
       <a href="#kelola-pengeluaran" data-scroll>Pengeluaran</a>
@@ -50,13 +54,16 @@
     </nav>
 
     <div class="nav-actions">
+      <a href="#bayar" class="btn btn-sm btn-primary glass-btn nav-pay-cta" id="navPayBtn" data-scroll>
+        <i data-lucide="qr-code"></i><span>Bayar Kas</span>
+      </a>
       <div class="switcher" id="switcher" role="tablist" aria-label="Pilih panel">
         <span class="switch-indicator" id="switchIndicator"></span>
         <button class="switch-btn active" type="button" data-panel="siswa" role="tab" aria-selected="true">
           <i data-lucide="users"></i><span>Siswa</span>
         </button>
         <button class="switch-btn" type="button" data-panel="admin" role="tab" aria-selected="false">
-          <i data-lucide="shield-check"></i><span>Bendahara</span>
+          <i data-lucide="shield-check"></i><span>Login Bendahara</span>
         </button>
       </div>
       <button class="lock-btn glass-btn hidden" type="button" id="btnLock" title="Kunci Panel / Logout">
@@ -72,71 +79,359 @@
     <!-- ===================================================== -->
     <div class="panel" id="panelSiswa">
 
-      <!-- RINGKASAN -->
+      <!-- 1. HERO & EXPANDING HERO VISUAL CARD -->
       <section class="section hero" id="ringkasan">
         <div class="container">
-          <div class="hero-head">
-            <span class="eyebrow"><span class="live-dot"></span>Kas Kelas <b data-bind="className">XI RPL 1</b> · Real-time</span>
+          <div class="hero-head hero-centered">
+            <div class="hero-float-badges" aria-hidden="true">
+              <span class="float-orb orb-left"><i data-lucide="sparkles"></i> Rp 5.000/mgg</span>
+              <span class="float-orb orb-right"><i data-lucide="shield-check"></i> 100% Transparan</span>
+            </div>
+
+            <span class="eyebrow"><span class="live-dot"></span>Kas Kelas <b data-bind="className">XE 3</b> · Real-time Dashboard</span>
+
             <h1 class="display split-title">Uang kas kelas, <span class="hl">transparan</span> &amp; tanpa drama.</h1>
-            <p class="lead" data-reveal>Pantau saldo, cek siapa yang belum bayar, lalu konfirmasi pembayaran lewat QR WhatsApp dalam hitungan detik. Iuran cuma <b>Rp 5.000 / minggu</b>.</p>
+
+            <p class="lead" data-reveal>
+              Pantau saldo kelas secara terbuka, cek rincian minggu yang belum dibayar, lalu konfirmasi lewat <b>QR WhatsApp</b> dalam hitungan detik.
+            </p>
+
             <div class="hero-cta" data-reveal>
-              <a href="#bayar" class="btn btn-primary glass-btn" data-scroll><i data-lucide="qr-code"></i>Bayar Kas Sekarang</a>
-              <a href="#pengeluaran" class="btn btn-ghost" data-scroll><i data-lucide="book-open"></i>Buku Pengeluaran</a>
+              <a href="#bayar" class="btn btn-primary glass-btn btn-lg" data-scroll>
+                <i data-lucide="qr-code"></i>Bayar Kas Sekarang
+              </a>
+              <a href="#bento-dashboard" class="btn btn-ghost glass-btn btn-lg" data-scroll>
+                <i data-lucide="bar-chart-3"></i>Lihat Analitik Kas
+              </a>
             </div>
           </div>
 
-          <div class="stats-grid" data-stagger>
-            <article class="stat-card stat-main">
-              <div class="stat-label"><span class="stat-icon"><i data-lucide="piggy-bank"></i></span>Saldo Kas Terkini</div>
-              <div class="stat-value" id="statSaldo">Rp 0</div>
-              <div class="stat-foot" id="statUpdated">Memuat data…</div>
-              <span class="stat-deco"></span>
-            </article>
-            <article class="stat-card">
-              <div class="stat-label"><span class="stat-icon icon-sage"><i data-lucide="trending-up"></i></span>Total Pemasukan</div>
-              <div class="stat-value" id="statIncome">Rp 0</div>
-              <div class="stat-foot" id="statIncomeSub">-</div>
-            </article>
-            <article class="stat-card">
-              <div class="stat-label"><span class="stat-icon icon-peach"><i data-lucide="trending-down"></i></span>Total Pengeluaran</div>
-              <div class="stat-value" id="statExpense">Rp 0</div>
-              <div class="stat-foot" id="statExpenseSub">-</div>
-            </article>
-            <article class="stat-card">
-              <div class="stat-label"><span class="stat-icon icon-teal"><i data-lucide="badge-check"></i></span>Siswa Lunas</div>
-              <div class="stat-value" id="statLunas">0/0</div>
-              <div class="stat-foot" id="statLunasSub">-</div>
-            </article>
-          </div>
+          <!-- EXPANDING HERO VISUAL CARD (Bertumpuk miring -> melebar penuh saat di-scroll) -->
+          <div class="hero-expand-stage" id="heroExpandStage">
+            <div class="hero-stack-back stack-1" aria-hidden="true"></div>
+            <div class="hero-stack-back stack-2" aria-hidden="true"></div>
 
-          <div class="progress-grid" data-stagger>
-            <div class="progress-card">
-              <div class="progress-head">
-                <div>
-                  <span class="progress-title"><i data-lucide="target"></i>Target Kas Minggu Ini</span>
-                  <span class="progress-sub" id="weekTargetLabel">-</span>
+            <div class="hero-expand-card" id="heroExpandCard">
+              <!-- Bar Atas Visual Card -->
+              <div class="hec-topbar">
+                <div class="hec-dots" aria-hidden="true">
+                  <span></span><span></span><span></span>
                 </div>
-                <b class="progress-pct" id="weekTargetPct">0%</b>
-              </div>
-              <div class="progress-track"><div class="progress-fill" id="weekTargetBar"></div></div>
-              <p class="progress-caption" id="weekTargetCaption">-</p>
-            </div>
-            <div class="progress-card">
-              <div class="progress-head">
-                <div>
-                  <span class="progress-title"><i data-lucide="calendar-days"></i>Target Kas Bulan Ini</span>
-                  <span class="progress-sub" id="monthTargetLabel">-</span>
+                <div class="hec-badge">
+                  <i data-lucide="activity"></i>
+                  <span>Live Buku Kas · Kelas <b data-bind="className">XE 3</b></span>
                 </div>
-                <b class="progress-pct" id="monthTargetPct">0%</b>
+                <a href="#pengeluaran" class="hec-link" data-scroll>
+                  <span>Buku Pengeluaran</span><i data-lucide="arrow-up-right"></i>
+                </a>
               </div>
-              <div class="progress-track"><div class="progress-fill progress-fill-warm" id="monthTargetBar"></div></div>
-              <p class="progress-caption" id="monthTargetCaption">-</p>
+
+              <!-- 4 Kartu Statistik Utama -->
+              <div class="stats-grid" data-stagger>
+                <article class="stat-card stat-main">
+                  <div class="stat-label"><span class="stat-icon"><i data-lucide="piggy-bank"></i></span>Saldo Kas Terkini</div>
+                  <div class="stat-value" id="statSaldo">Rp 0</div>
+                  <div class="stat-foot" id="statUpdated">Memuat data…</div>
+                  <span class="stat-deco"></span>
+                </article>
+                <article class="stat-card">
+                  <div class="stat-label"><span class="stat-icon icon-sage"><i data-lucide="trending-up"></i></span>Total Pemasukan</div>
+                  <div class="stat-value" id="statIncome">Rp 0</div>
+                  <div class="stat-foot" id="statIncomeSub">-</div>
+                </article>
+                <article class="stat-card">
+                  <div class="stat-label"><span class="stat-icon icon-peach"><i data-lucide="trending-down"></i></span>Total Pengeluaran</div>
+                  <div class="stat-value" id="statExpense">Rp 0</div>
+                  <div class="stat-foot" id="statExpenseSub">-</div>
+                </article>
+                <article class="stat-card">
+                  <div class="stat-label"><span class="stat-icon icon-teal"><i data-lucide="badge-check"></i></span>Siswa Lunas</div>
+                  <div class="stat-value" id="statLunas">0/0</div>
+                  <div class="stat-foot" id="statLunasSub">-</div>
+                </article>
+              </div>
+
+              <!-- Progress Target Mingguan & Bulanan -->
+              <div class="progress-grid" data-stagger>
+                <div class="progress-card">
+                  <div class="progress-head">
+                    <div>
+                      <span class="progress-title"><i data-lucide="target"></i>Target Kas Minggu Ini</span>
+                      <span class="progress-sub" id="weekTargetLabel">-</span>
+                    </div>
+                    <b class="progress-pct" id="weekTargetPct">0%</b>
+                  </div>
+                  <div class="progress-track"><div class="progress-fill" id="weekTargetBar"></div></div>
+                  <p class="progress-caption" id="weekTargetCaption">-</p>
+                </div>
+                <div class="progress-card">
+                  <div class="progress-head">
+                    <div>
+                      <span class="progress-title"><i data-lucide="calendar-days"></i>Target Kas Bulan Ini</span>
+                      <span class="progress-sub" id="monthTargetLabel">-</span>
+                    </div>
+                    <b class="progress-pct" id="monthTargetPct">0%</b>
+                  </div>
+                  <div class="progress-track"><div class="progress-fill progress-fill-warm" id="monthTargetBar"></div></div>
+                  <p class="progress-caption" id="monthTargetCaption">-</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- TUNGGAKAN -->
+      <!-- 2. BENTO DASHBOARD STATISTIK & TRANSPARANSI (2 KOLOM) -->
+      <section class="section" id="bento-dashboard">
+        <div class="container">
+          <div class="section-head">
+            <span class="eyebrow"><i data-lucide="layout-grid"></i>Bento Interactive Analytics</span>
+            <h2 class="split-title">Visualisasi kas yang <span class="hl">hidup</span> &amp; mudah dipahami.</h2>
+            <p data-reveal>Geser slide interaktif di kiri atau pilih rentang waktu di kanan untuk melihat performa kelunasan serta pertumbuhan saldo kelas.</p>
+          </div>
+
+          <div class="bento-grid-2col">
+            <!-- KOLOM KIRI: Widget Auto-Switch / Carousel 3 Slide -->
+            <div class="card bento-left-card" id="bentoCarouselCard" data-reveal>
+              <div class="bento-card-top">
+                <div>
+                  <span class="bento-kicker" id="bentoSlideKicker">SLIDE 01 · STATUS KELUNASAN</span>
+                  <h3 class="bento-title" id="bentoSlideTitle">Siswa Lunas &amp; Tag Disiplin</h3>
+                </div>
+                <div class="bento-nav-btns">
+                  <button type="button" class="icon-btn icon-btn-sm" id="bentoPrevBtn" aria-label="Slide sebelumnya">
+                    <i data-lucide="chevron-left"></i>
+                  </button>
+                  <button type="button" class="icon-btn icon-btn-sm" id="bentoNextBtn" aria-label="Slide berikutnya">
+                    <i data-lucide="chevron-right"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div class="bento-slides-viewport" id="bentoSlidesViewport">
+                <!-- Slide 1: Falling Pill Tags -->
+                <div class="bento-slide active" data-bento-slide="0">
+                  <div class="falling-arena" id="fallingPillsArena"></div>
+                  <div class="slide-Subbar">
+                    <span><i data-lucide="sparkles"></i> Tag siswa lunas &amp; badge apresiasi kelas</span>
+                    <button type="button" class="btn btn-xs btn-soft" id="btnReplayPills">
+                      <i data-lucide="refresh-cw"></i>Jatuhkan Ulang
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Slide 2: Horizontal Animated Bars -->
+                <div class="bento-slide" data-bento-slide="1">
+                  <div class="horiz-bars-list" id="bentoHorizBars"></div>
+                  <div class="slide-Subbar">
+                    <span>Persentase kelunasan kas per minggu berjalan</span>
+                    <span class="pill pill-ok" id="bentoAvgPaidBadge">Rata-rata 0%</span>
+                  </div>
+                </div>
+
+                <!-- Slide 3: Wavy Line Chart + Floating Dark Pill Tooltip -->
+                <div class="bento-slide" data-bento-slide="2">
+                  <div class="wavy-chart-stage" id="wavyChartStage">
+                    <div class="wavy-dark-tooltip" id="bentoWaveTooltip">Minggu 1 · Rp 0</div>
+                    <svg class="wavy-svg" id="bentoWavySvg" viewBox="0 0 520 220" preserveAspectRatio="none"></svg>
+                  </div>
+                  <div class="slide-Subbar">
+                    <span>Klik atau arahkan kursor pada titik grafik untuk detail mingguan</span>
+                    <span class="pill pill-peach" id="bentoPeakWeekBadge">Puncak: -</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Indikator Bar Tipis di Bawah -->
+              <div class="bento-indicator-bars" id="bentoIndicatorBars" role="tablist" aria-label="Pilih tampilan widget">
+                <button type="button" class="bento-bar-btn active" data-slide-to="0" aria-label="Slide 1: Pill Tags">
+                  <span class="bento-bar-label">01 · Pill Lunas</span>
+                  <span class="bento-bar-track"><span class="bento-bar-fill"></span></span>
+                </button>
+                <button type="button" class="bento-bar-btn" data-slide-to="1" aria-label="Slide 2: Grafik Batang">
+                  <span class="bento-bar-label">02 · Grafik Minggu</span>
+                  <span class="bento-bar-track"><span class="bento-bar-fill"></span></span>
+                </button>
+                <button type="button" class="bento-bar-btn" data-slide-to="2" aria-label="Slide 3: Tren Gelombang">
+                  <span class="bento-bar-label">03 · Tren Gelombang</span>
+                  <span class="bento-bar-track"><span class="bento-bar-fill"></span></span>
+                </button>
+              </div>
+            </div>
+
+            <!-- KOLOM KANAN: Ringkasan Performa Kas -->
+            <div class="card bento-right-card" id="bentoPerfCard" data-reveal>
+              <div class="bento-perf-head">
+                <div>
+                  <span class="bento-kicker">PERFORMA KAS KELAS</span>
+                  <h3 class="bento-title">Ringkasan Pertumbuhan</h3>
+                </div>
+                <!-- Filter Waktu Berbentuk Pill -->
+                <div class="perf-time-pills" id="perfTimeFilter" role="tablist" aria-label="Filter rentang waktu">
+                  <button type="button" class="time-pill" data-period="1w">1 Minggu</button>
+                  <button type="button" class="time-pill" data-period="1m">1 Bulan</button>
+                  <button type="button" class="time-pill" data-period="1s">1 Semester</button>
+                  <button type="button" class="time-pill active" data-period="all">Semua</button>
+                </div>
+              </div>
+
+              <div class="perf-cards-stack">
+                <!-- Kartu Statistik Cerah 1 (Kuning Pastel / Butter) -->
+                <article class="perf-highlight-card perf-card-butter">
+                  <div class="phc-info">
+                    <span class="phc-tag"><i data-lucide="check-circle-2"></i>Tingkat Kelunasan</span>
+                    <div class="phc-value" id="perfRateVal">+0%</div>
+                    <p class="phc-desc" id="perfRateDesc">Siswa membayar tepat pada periode ini</p>
+                  </div>
+                  <div class="phc-chart-box">
+                    <span class="phc-float-badge" id="perfRateBadge">0/0 Lunas</span>
+                    <svg class="phc-spark-svg" id="perfSpark1" viewBox="0 0 220 90"></svg>
+                  </div>
+                </article>
+
+                <!-- Kartu Statistik Cerah 2 (Warm Peach / Sage) -->
+                <article class="perf-highlight-card perf-card-peach">
+                  <div class="phc-info">
+                    <span class="phc-tag"><i data-lucide="trending-up"></i>Pertumbuhan Saldo</span>
+                    <div class="phc-value" id="perfGrowthVal">+Rp 0</div>
+                    <p class="phc-desc" id="perfGrowthDesc">Akumulasi pemasukan bersih periode terpilih</p>
+                  </div>
+                  <div class="phc-chart-box">
+                    <span class="phc-float-badge badge-teal" id="perfGrowthBadge">+0 setoran</span>
+                    <svg class="phc-spark-svg" id="perfSpark2" viewBox="0 0 220 90"></svg>
+                  </div>
+                </article>
+              </div>
+
+              <div class="perf-footer-bar" id="perfSummaryFoot">
+                <span><i data-lucide="info"></i> Iuran wajib Rp 5.000/minggu</span>
+                <a href="#bayar" data-scroll>Setor kas sekarang <i data-lucide="arrow-right"></i></a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. TIPOGRAFI BESAR + INLINE FLOATING ICONS & MARQUEE PILL -->
+      <section class="section manifesto-section" id="manifesto">
+        <div class="container">
+          <!-- Baris Judul Besar Minimalis + Ikon 3D/SVG Melayang + Pill Marquee Berjalan -->
+          <div class="marquee-headline-wrap" data-reveal>
+            <div class="mh-top-row">
+              <span class="mh-float-icon mh-icon-1" aria-hidden="true">
+                <i data-lucide="coins"></i>
+              </span>
+              <h2 class="mh-giant-title split-title">Bukan sekadar catat</h2>
+
+              <!-- Pill Berwarna Cerah Berisi Teks Marquee Berjalan -->
+              <div class="marquee-pill" aria-label="Highlight kas kelas">
+                <div class="marquee-track">
+                  <span>✦ KAS TRANSPARAN ✦ RP 5.000 / MINGGU ✦ BAYAR VIA QR WA ✦ ANTI RIBET ✦ REAL-TIME SALDO </span>
+                  <span aria-hidden="true">✦ KAS TRANSPARAN ✦ RP 5.000 / MINGGU ✦ BAYAR VIA QR WA ✦ ANTI RIBET ✦ REAL-TIME SALDO </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mh-bottom-row">
+              <h2 class="mh-giant-title split-title">tapi <span class="hl">saling percaya</span> satu kelas.</h2>
+              <span class="mh-float-icon mh-icon-2" aria-hidden="true">
+                <i data-lucide="sparkles"></i>
+              </span>
+            </div>
+          </div>
+
+          <!-- Kalimat Pernyataan Besar dengan Ikon/Badge Bulat Inline di Tengah Baris Teks -->
+          <div class="statement-card" data-reveal>
+            <p class="inline-statement split-title">
+              Setiap uang kas
+              <span class="inline-badge ib-butter"><i data-lucide="wallet"></i> Rp 5.000</span>
+              yang kamu titipkan langsung tercatat terbuka, bisa dipantau
+              <span class="inline-badge ib-teal"><i data-lucide="eye"></i> 24/7</span>
+              oleh seluruh siswa, dan dipakai untuk kebutuhan bersama
+              <span class="inline-badge ib-peach"><i data-lucide="heart-handshake"></i> Kelas Kita</span>
+              tanpa ada satu rupiah pun yang tersembunyi.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. KARTU 3 LANGKAH CARA BAYAR BERTINGKAT (01, 02, 03) -->
+      <section class="section" id="cara-bayar">
+        <div class="container">
+          <div class="section-head">
+            <span class="eyebrow"><i data-lucide="compass"></i>Alur Pembayaran Mudah</span>
+            <h2 class="split-title">Tiga langkah bereskan <span class="hl">iuran kas</span> mingguan.</h2>
+            <p data-reveal>Tidak perlu bingung tanya bendahara berapa tunggakanmu. Ikuti 3 langkah praktis di bawah ini.</p>
+          </div>
+
+          <div class="steps-stagger-grid" data-stagger>
+            <!-- Langkah 01 -->
+            <article class="step-stagger-card step-card-01">
+              <div class="ssc-top">
+                <span class="ssc-chip">Langkah Pertama</span>
+                <h3>Pilih Nama &amp; Cek Tunggakan</h3>
+                <p>Cari namamu di daftar kelas untuk melihat minggu mana saja yang belum dilunasi beserta hitungannya.</p>
+              </div>
+              <div class="ssc-bottom ssc-bg-sage">
+                <div class="ssc-illus" aria-hidden="true">
+                  <span class="ssc-illus-icon"><i data-lucide="user-search"></i></span>
+                  <span class="ssc-illus-pill">Rp 5.000 × Minggu</span>
+                </div>
+                <div class="ssc-num-row">
+                  <span class="ssc-giant-num">01</span>
+                  <a href="#tunggakan" class="ssc-arrow-btn" data-scroll aria-label="Cek tunggakan sekarang">
+                    <i data-lucide="arrow-up-right"></i>
+                  </a>
+                </div>
+              </div>
+            </article>
+
+            <!-- Langkah 02 (Elevated / Lebih Tinggi) -->
+            <article class="step-stagger-card step-card-02 is-elevated">
+              <div class="ssc-top">
+                <span class="ssc-chip ssc-chip-butter">Langkah Kedua · Favorit</span>
+                <h3>Scan QR Code WhatsApp</h3>
+                <p>Centang minggu yang ingin dibayar, lalu scan QR otomatis atau tekan tombol Buka di WhatsApp dari HP-mu.</p>
+              </div>
+              <div class="ssc-bottom ssc-bg-butter">
+                <div class="ssc-illus" aria-hidden="true">
+                  <span class="ssc-illus-icon"><i data-lucide="qr-code"></i></span>
+                  <span class="ssc-illus-pill">Auto Format WA</span>
+                </div>
+                <div class="ssc-num-row">
+                  <span class="ssc-giant-num">02</span>
+                  <a href="#bayar" class="ssc-arrow-btn" data-scroll aria-label="Menuju bagian QR WhatsApp">
+                    <i data-lucide="arrow-up-right"></i>
+                  </a>
+                </div>
+              </div>
+            </article>
+
+            <!-- Langkah 03 -->
+            <article class="step-stagger-card step-card-03">
+              <div class="ssc-top">
+                <span class="ssc-chip ssc-chip-peach">Langkah Ketiga</span>
+                <h3>Konfirmasi &amp; Otomatis Tercatat</h3>
+                <p>Serahkan uang tunai/transfer ke bendahara. Saat dicentang, namamu langsung naik di leaderboard kelas!</p>
+              </div>
+              <div class="ssc-bottom ssc-bg-peach">
+                <div class="ssc-illus" aria-hidden="true">
+                  <span class="ssc-illus-icon"><i data-lucide="badge-check"></i></span>
+                  <span class="ssc-illus-pill">Status Lunas ✓</span>
+                </div>
+                <div class="ssc-num-row">
+                  <span class="ssc-giant-num">03</span>
+                  <a href="#rajin" class="ssc-arrow-btn" data-scroll aria-label="Lihat leaderboard kelas">
+                    <i data-lucide="arrow-up-right"></i>
+                  </a>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- DAFTAR BELUM BAYAR (TUNGGAKAN) -->
       <section class="section" id="tunggakan">
         <div class="container">
           <div class="section-head">
@@ -155,7 +450,7 @@
         </div>
       </section>
 
-      <!-- BAYAR VIA QR -->
+      <!-- PILIH NAMA & BAYAR VIA QR WHATSAPP -->
       <section class="section" id="bayar">
         <div class="container">
           <div class="section-head">
@@ -222,7 +517,73 @@
         </div>
       </section>
 
-      <!-- LEADERBOARD -->
+      <!-- 5. BARIS STATISTIK RAKSASA (BIG ROLLING COUNTERS) -->
+      <section class="section" id="big-counters">
+        <div class="container">
+          <div class="section-head">
+            <span class="eyebrow"><i data-lucide="flame"></i>Sorotan Angka Kas</span>
+            <h2 class="split-title">Kekuatan kas kelas dalam <span class="hl">angka nyata.</span></h2>
+          </div>
+
+          <div class="big-counters-list">
+            <!-- Baris 1: Total Saldo Terkini -->
+            <div class="big-counter-row" data-reveal>
+              <div class="bcr-left">
+                <span class="bcr-icon-box box-teal"><i data-lucide="vault"></i></span>
+                <div>
+                  <span class="bcr-kicker">DANA SIAP PAKAI</span>
+                  <h4>Total Saldo Terkini</h4>
+                </div>
+              </div>
+              <div class="bcr-center">
+                <span class="tilted-badge badge-tilt-left badge-butter" id="bigSaldoBadge">Kas Aktif 100%</span>
+                <div class="bcr-giant-num" id="bigCounterSaldo">Rp 0</div>
+              </div>
+              <p class="bcr-desc">
+                Selisih bersih dari seluruh setoran mingguan siswa dikurangi pengeluaran kelas yang telah tercatat resmi.
+              </p>
+            </div>
+
+            <!-- Baris 2: Jumlah Siswa Aktif -->
+            <div class="big-counter-row" data-reveal>
+              <div class="bcr-left">
+                <span class="bcr-icon-box box-butter"><i data-lucide="users-round"></i></span>
+                <div>
+                  <span class="bcr-kicker">PARTISIPASI KELAS</span>
+                  <h4>Jumlah Siswa Aktif</h4>
+                </div>
+              </div>
+              <div class="bcr-center">
+                <span class="tilted-badge badge-tilt-right badge-sage" id="bigSiswaBadge">0 Lunas Penuh</span>
+                <div class="bcr-giant-num" id="bigCounterSiswa">0 Siswa</div>
+              </div>
+              <p class="bcr-desc">
+                Anggota kelas <b data-bind="className">XE 3</b> yang terdaftar dalam pembukuan iuran rutin Rp 5.000 per minggu.
+              </p>
+            </div>
+
+            <!-- Baris 3: Total Transaksi Lunas -->
+            <div class="big-counter-row" data-reveal>
+              <div class="bcr-left">
+                <span class="bcr-icon-box box-peach"><i data-lucide="check-check"></i></span>
+                <div>
+                  <span class="bcr-kicker">KEDISIPLINAN</span>
+                  <h4>Total Transaksi Lunas</h4>
+                </div>
+              </div>
+              <div class="bcr-center">
+                <span class="tilted-badge badge-tilt-left badge-peach" id="bigTransaksiBadge">× Rp 5.000</span>
+                <div class="bcr-giant-num" id="bigCounterTransaksi">0 Setoran</div>
+              </div>
+              <p class="bcr-desc">
+                Akumulasi tanda centang pembayaran mingguan yang telah diverifikasi oleh bendahara kelas.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- LEADERBOARD PALING RAJIN -->
       <section class="section" id="rajin">
         <div class="container">
           <div class="section-head">
@@ -239,7 +600,7 @@
         </div>
       </section>
 
-      <!-- BUKU PENGELUARAN -->
+      <!-- BUKU PENGELUARAN TRANSPARAN -->
       <section class="section" id="pengeluaran">
         <div class="container">
           <div class="section-head">
@@ -257,6 +618,223 @@
             </div>
             <div class="card expense-book" data-reveal>
               <ul class="expense-list" id="expList"></ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. GRID CATATAN PENGURUS (MASONRY QUOTES) & FAQ ACCORDION -->
+      <section class="section" id="catatan-pengurus">
+        <div class="container">
+          <div class="section-head">
+            <span class="eyebrow"><i data-lucide="message-square-quote"></i>Catatan Pengurus &amp; Pengumuman</span>
+            <h2 class="split-title">Suara pengurus demi <span class="hl">kenyamanan</span> kelas kita.</h2>
+            <p data-reveal>Info penting seputar jadwal penarikan kas, rencana penggunaan dana, dan apresiasi untuk teman-teman yang disiplin.</p>
+          </div>
+
+          <!-- 3 Kolom Staggered Masonry Quotes -->
+          <div class="masonry-quotes-grid" data-stagger>
+            <article class="quote-card">
+              <span class="quote-mark" aria-hidden="true">“</span>
+              <p class="quote-text">
+                Penarikan kas rutin dilakukan setiap hari <b>Senin &amp; Rabu</b> saat jam istirahat pertama. Buat yang mau bayar lewat QR WA, tinggal tunjukkan chat konfirmasinya ya!
+              </p>
+              <div class="quote-author">
+                <span class="avatar avatar-sm" style="background:#DDF0ED;color:#236862">BN</span>
+                <div>
+                  <strong>Bendahara Utama</strong>
+                  <span>Jadwal Penarikan Mingguan</span>
+                </div>
+                <span class="pill pill-ok">Aktif</span>
+              </div>
+            </article>
+
+            <article class="quote-card quote-card-tall quote-card-butter">
+              <span class="quote-mark" aria-hidden="true">“</span>
+              <p class="quote-text">
+                Saldo kas bulan ini diprioritaskan untuk isi ulang spidol papan tulis, perlengkapan kebersihan kelas, serta cadangan dana sosial jika ada teman yang sakit. Terima kasih buat yang selalu lunas tepat waktu!
+              </p>
+              <div class="quote-author">
+                <span class="avatar avatar-sm" style="background:#FFF3C9;color:#85620A">KK</span>
+                <div>
+                  <strong>Ketua Kelas <span data-bind="className">XE 3</span></strong>
+                  <span>Rencana Alokasi Dana</span>
+                </div>
+                <span class="pill pill-peach">Prioritas</span>
+              </div>
+            </article>
+
+            <article class="quote-card">
+              <span class="quote-mark" aria-hidden="true">“</span>
+              <p class="quote-text">
+                Kalau ada siswa yang ingin menabung atau mencicil tunggakan beberapa minggu sekaligus, langsung centang minggu yang diinginkan di menu <b>Bayar via QR WA</b>.
+              </p>
+              <div class="quote-author">
+                <span class="avatar avatar-sm" style="background:#E3EEE4;color:#3B6A49">WK</span>
+                <div>
+                  <strong>Wakil Bendahara</strong>
+                  <span>Kemudahan Cicilan &amp; Rapel</span>
+                </div>
+                <span class="pill pill-ok">Tips</span>
+              </div>
+            </article>
+
+            <article class="quote-card quote-card-sage">
+              <span class="quote-mark" aria-hidden="true">“</span>
+              <p class="quote-text">
+                Semua nota pembelian barang keperluan kelas disimpan rapi di map bendahara dan angkanya langsung di-input ke <b>Buku Pengeluaran</b> di halaman ini pada hari yang sama.
+              </p>
+              <div class="quote-author">
+                <span class="avatar avatar-sm" style="background:#FDE6D6;color:#9D4F27">SK</span>
+                <div>
+                  <strong>Sekretaris Kelas</strong>
+                  <span>Arsip Nota &amp; Bukti Belanja</span>
+                </div>
+                <span class="pill pill-ok">Terverifikasi</span>
+              </div>
+            </article>
+
+            <article class="quote-card">
+              <span class="quote-mark" aria-hidden="true">“</span>
+              <p class="quote-text">
+                Siswa yang masuk 3 besar <b>Leaderboard Paling Rajin</b> sampai akhir semester bakal dapat apresiasi spesial dari kas kelas saat acara makan bersama!
+              </p>
+              <div class="quote-author">
+                <span class="avatar avatar-sm" style="background:#E5E9F8;color:#394B8C">KO</span>
+                <div>
+                  <strong>Koordinator Acara</strong>
+                  <span>Apresiasi Akhir Semester</span>
+                </div>
+                <span class="pill pill-peach">Reward</span>
+              </div>
+            </article>
+
+            <article class="quote-card quote-card-peach">
+              <span class="quote-mark" aria-hidden="true">“</span>
+              <p class="quote-text">
+                Pengelolaan kas yang jujur dan terbuka melatih tanggung jawab bersama. Pertahankan budaya transparan ini sampai lulus nanti.
+              </p>
+              <div class="quote-author">
+                <span class="avatar avatar-sm" style="background:#F7E2EE;color:#8B3B68">WL</span>
+                <div>
+                  <strong>Wali Kelas</strong>
+                  <span>Pesan Pembina Kelas</span>
+                </div>
+                <span class="pill pill-ok">Inspirasi</span>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- FAQ ACCORDION MINIMALIS -->
+      <section class="section" id="faq">
+        <div class="container">
+          <div class="faq-layout">
+            <div class="faq-intro">
+              <span class="eyebrow"><i data-lucide="circle-help"></i>FAQ Kas Kelas</span>
+              <h2 class="split-title">Pertanyaan yang sering <span class="hl">ditanyakan.</span></h2>
+              <p data-reveal>Masih bingung soal aturan kas, cara bayar rapel, atau transparansi dana? Cek jawaban singkatnya di sini.</p>
+            </div>
+
+            <div class="faq-accordion" id="faqAccordion" data-reveal>
+              <div class="faq-item is-open">
+                <button type="button" class="faq-question" aria-expanded="true">
+                  <span>Berapa nominal iuran kas kelas setiap minggunya?</span>
+                  <span class="faq-icon"><i data-lucide="plus"></i></span>
+                </button>
+                <div class="faq-answer" style="max-height: 200px;">
+                  <div class="faq-answer-inner">
+                    Nominal iuran kas kelas ditetapkan sebesar <b>Rp 5.000 per minggu</b> untuk setiap siswa. Sistem otomatis menghitung kelipatan Rp 5.000 sesuai jumlah minggu yang kamu pilih.
+                  </div>
+                </div>
+              </div>
+
+              <div class="faq-item">
+                <button type="button" class="faq-question" aria-expanded="false">
+                  <span>Bagaimana cara membayar rapel (lebih dari 1 minggu sekaligus)?</span>
+                  <span class="faq-icon"><i data-lucide="plus"></i></span>
+                </button>
+                <div class="faq-answer">
+                  <div class="faq-answer-inner">
+                    Sangat mudah! Buka bagian <b>Bayar via QR WhatsApp</b>, pilih namamu, lalu centang berapa pun minggu yang ingin kamu lunasi sekarang (bisa 2, 3, atau seluruh minggu tunggakan). Total tagihan dan pesan QR WhatsApp akan menyesuaikan otomatis.
+                  </div>
+                </div>
+              </div>
+
+              <div class="faq-item">
+                <button type="button" class="faq-question" aria-expanded="false">
+                  <span>Untuk apa saja uang kas kelas digunakan?</span>
+                  <span class="faq-icon"><i data-lucide="plus"></i></span>
+                </button>
+                <div class="faq-answer">
+                  <div class="faq-answer-inner">
+                    Dana kas digunakan untuk menunjang kebutuhan bersama seperti pembelian ATK (spidol, tinta, fotokopi materi), alat kebersihan kelas, dekorasi, dana sosial menjenguk teman sakit, serta konsumsi kegiatan kelas. Semuanya tercatat di <b>Buku Pengeluaran</b>.
+                  </div>
+                </div>
+              </div>
+
+              <div class="faq-item">
+                <button type="button" class="faq-question" aria-expanded="false">
+                  <span>Kenapa namaku belum berubah menjadi Lunas setelah scan QR WhatsApp?</span>
+                  <span class="faq-icon"><i data-lucide="plus"></i></span>
+                </button>
+                <div class="faq-answer">
+                  <div class="faq-answer-inner">
+                    QR WhatsApp berfungsi mengirimkan format konfirmasi resmi ke chat bendahara. Setelah uang tunai atau bukti transfer diterima dan bendahara menekan tombol centang di <b>Panel Bendahara</b>, statusmu akan langsung berubah menjadi <b>Lunas</b> secara real-time.
+                  </div>
+                </div>
+              </div>
+
+              <div class="faq-item">
+                <button type="button" class="faq-question" aria-expanded="false">
+                  <span>Bagaimana perhitungan peringkat di Leaderboard "Paling Rajin"?</span>
+                  <span class="faq-icon"><i data-lucide="plus"></i></span>
+                </button>
+                <div class="faq-answer">
+                  <div class="faq-answer-inner">
+                    Peringkat dihitung berdasarkan jumlah minggu yang sudah lunas ditambah bonus poin ketepatan waktu (membayar maksimal 7 hari sejak tanggal minggu berjalan). Siswa yang selalu lunas tanpa tunggakan berhak mendapat badge <b>Teladan Utama</b>.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7. ROUNDED CTA BANNER -->
+      <section class="section cta-banner-section" id="cta-banner">
+        <div class="container">
+          <div class="cta-rounded-banner" data-reveal>
+            <div class="cta-banner-content">
+              <span class="cta-pill"><i data-lucide="sparkles"></i> Bebas Tunggakan, Kelas Makin Nyaman</span>
+              <h2 class="split-title">Yuk, cek namamu &amp; lunasi kas minggu ini!</h2>
+              <p>Cuma butuh 10 detik untuk pilih nama, centang minggu, dan kirim konfirmasi via QR WhatsApp ke bendahara.</p>
+              <div class="cta-banner-actions">
+                <a href="#bayar" class="btn btn-lg glass-btn cta-glass-primary" data-scroll>
+                  <i data-lucide="qr-code"></i>Bayar Kas Sekarang
+                </a>
+                <a href="#tunggakan" class="btn btn-lg cta-glass-secondary" data-scroll>
+                  <i data-lucide="search"></i>Cek Daftar Tunggakan
+                </a>
+              </div>
+            </div>
+
+            <!-- Ilustrasi Dekoratif Ringan di Sisi Kanan -->
+            <div class="cta-banner-illus" aria-hidden="true">
+              <div class="illus-card illus-card-main">
+                <div class="ic-head">
+                  <span class="ic-icon"><i data-lucide="qr-code"></i></span>
+                  <div>
+                    <strong>QR Kas Kelas</strong>
+                    <span data-bind="className">XE 3</span>
+                  </div>
+                </div>
+                <div class="ic-amount">Rp 5.000<span>/mgg</span></div>
+                <div class="ic-status"><i data-lucide="check-circle-2"></i> Siap Konfirmasi WA</div>
+              </div>
+              <div class="illus-float illus-coin-1"><i data-lucide="coins"></i> +Rp 5.000</div>
+              <div class="illus-float illus-coin-2"><i data-lucide="shield-check"></i> Lunas 100%</div>
             </div>
           </div>
         </div>
@@ -476,14 +1054,25 @@
     </div>
   </main>
 
-  <!-- ================= FOOTER ================= -->
+  <!-- ================= FOOTER MINIMALIS ================= -->
   <footer class="footer">
     <div class="container footer-inner">
-      <div class="brand brand-footer">
-        <span class="brand-logo"><i data-lucide="wallet"></i></span>
-        <span class="brand-text">Kas<span>Kelas</span></span>
+      <div class="footer-top">
+        <div class="brand brand-footer">
+          <span class="brand-logo"><i data-lucide="wallet"></i></span>
+          <span class="brand-text">Kas<span>Kelas</span></span>
+        </div>
+        <div class="footer-links">
+          <a href="#ringkasan" data-scroll>Ringkasan</a>
+          <a href="#bento-dashboard" data-scroll>Analitik</a>
+          <a href="#cara-bayar" data-scroll>Cara Bayar</a>
+          <a href="#tunggakan" data-scroll>Tunggakan</a>
+          <a href="#bayar" data-scroll>Bayar QR</a>
+          <a href="#pengeluaran" data-scroll>Pengeluaran</a>
+          <a href="#faq" data-scroll>FAQ</a>
+        </div>
       </div>
-      <p>© <span id="footerYear">2026</span> Kas Kelas <span data-bind="className">XE 3</span> · Data tersimpan aman di database.</p>
+      <p>© <span id="footerYear">2026</span> Kas Kelas <span data-bind="className">XE 3</span> · Data tersimpan aman di browser (localStorage).</p>
     </div>
   </footer>
 
@@ -494,7 +1083,7 @@
       <button class="modal-close" type="button" data-close aria-label="Tutup"><i data-lucide="x"></i></button>
       <div class="login-icon"><i data-lucide="lock-keyhole"></i></div>
       <h3 class="modal-title" id="loginTitle">Panel Bendahara</h3>
-      <p class="modal-sub">Masukkan password / PIN khusus bendahara untuk membuka panel.</p>
+      <p class="modal-sub" id="loginSubHint">Masukkan password / PIN khusus bendahara untuk membuka panel. <small style="display:block;margin-top:4px;color:var(--teal-deep)">(Default: <code id="loginDefaultCode" style="cursor:pointer" title="Klik untuk isi otomatis">kas2026</code> — klik untuk isi)</small></p>
       <form id="loginForm" autocomplete="off">
         <div class="pw-field">
           <input class="input" type="password" id="loginInput" placeholder="••••••••" autocomplete="current-password" aria-label="Password bendahara" />
@@ -665,9 +1254,9 @@
   <!-- ================= LIBRARY (CDN) ================= -->
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
-  <script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js"></script>
 
   <!-- ================= APLIKASI ================= -->
   <script src="script.js"></script>
